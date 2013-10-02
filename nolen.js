@@ -1,7 +1,7 @@
-# CSP demo code by David Nolen from
-#     http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
-#
-# Requires ES6 generators.
+// CSP demo code by David Nolen from
+//     http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
+//
+// Requires ES6 generators.
 
 function go_(machine, step) {
   while(!step.done) {
