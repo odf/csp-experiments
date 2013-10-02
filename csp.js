@@ -1,4 +1,4 @@
-go_ = function(machine, step) {
+var go_ = function(machine, step) {
   while(!step.done) {
     var arr   = step.value(),
         state = arr[0],
@@ -15,8 +15,8 @@ go_ = function(machine, step) {
   }
 }
 
-exports.go = function(machine) {
-  var gen = machine();
+exports.go = function(machine, args) {
+  var gen = machine.apply(undefined, args);
   go_(gen, gen.next());
 }
 
