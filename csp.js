@@ -66,9 +66,9 @@ Chan.prototype.close = function() {
 
 var go_ = function(machine, step) {
   while(!step.done) {
-    var arr   = step.value(),
-        state = arr[0],
-        value = arr[1];
+    var arr   = step.value();
+    var state = arr[0];
+    var value = arr[1];
 
     switch (state) {
       case "park":
@@ -89,4 +89,18 @@ exports.chan = function() {
 exports.go = function(machine, args) {
   var gen = machine.apply(undefined, args);
   go_(gen, gen.next());
+}
+
+exports.select = function(channels) {
+  return function() {
+    for (var i = 0; i < channels.length; ++i) {
+      var arr = channels[i].take()();
+      var state = arr[0];
+      var value = arr[1];
+      if (state == "continue") {
+        return ["continue", [channels[i], value]];
+      }
+    }
+    return ["park", null];
+  }
 }
