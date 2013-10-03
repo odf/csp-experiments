@@ -5,28 +5,28 @@ var csp = require("./csp");
 
 var generate = function* (ch) {
   for (var i = 2;;i++) {
-    yield csp.put(ch, i);
+    yield ch.put(i);
   }
 };
 
 var filter = function* (inch, outch, prime) {
   for (;;) {
-    var i = yield csp.take(inch);
+    var i = yield inch.take();
     if (i == null) {
       break;
     } else if (i % prime != 0) {
-      yield csp.put(outch, i);
+      yield outch.put(i);
     }
   }
 };
 
 var sieve = function* () {
-  var ch = [];
+  var ch = csp.chan();
   csp.go(generate, [ch]);
   for (var i = 0; i < 50; i++) {
-    var prime = yield csp.take(ch);
+    var prime = yield ch.take();
     console.log(prime);
-    var ch1 = [];
+    var ch1 = csp.chan();
     csp.go(filter, [ch, ch1, prime]);
     ch = ch1;
   }
