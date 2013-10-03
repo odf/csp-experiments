@@ -1,5 +1,7 @@
 var csp = require('./csp');
 
+var N = 3;
+
 var f = function* (ch, x) {
   for (var i = 0; i < 20; ++i) {
     yield ch.put(i + x);
@@ -7,22 +9,30 @@ var f = function* (ch, x) {
   ch.close()
 }
 
-var chans = [1,2,3].map(function(i) { return csp.chan(); })
-var xs = [1,2,3].map(function(i) { return i / 10; })
+var chans = [];
 
-for (i = 0; i < 3; ++i) {
-  csp.go(f, [chans[i], xs[i]]);
+for (var i = 0; i < N; ++i) {
+  var ch = csp.chan();
+  chans.push(ch);
+  csp.go(f, [ch, i / 10]);
 }
 
 var main = function* () {
-  while (true) {
-    var res = yield csp.select(chans);
+  var active = chans.slice();
+
+  while (active.length > 0) {
+    var res = yield csp.select(active);
     var ch  = res[0];
     var val = res[1];
     if (val == null) {
-      break;
+      for (var i = 0; i < N; ++i) {
+        if (ch == active[i]) {
+          active.splice(i, 1);
+        }
+      }
+    } else {
+      console.log(val);
     }
-    console.log(val);
   }
 }
 
