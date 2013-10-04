@@ -91,7 +91,7 @@ exports.go = function(machine, args) {
   go_(gen, gen.next());
 }
 
-exports.select = function(channels) {
+exports.select = function(channels, default_value) {
   return function() {
     for (var i = 0; i < channels.length; ++i) {
       var arr = channels[i].take()();
@@ -101,6 +101,9 @@ exports.select = function(channels) {
         return ["continue", [channels[i], value]];
       }
     }
-    return ["park", null];
+    if (default_value === undefined)
+      return ["park", null];
+    else
+      return ["continue", default_value]
   }
 }
