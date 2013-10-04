@@ -91,7 +91,7 @@ exports.go = function(machine, args) {
   go_(gen, gen.next());
 }
 
-exports.select = function(channels, default_value) {
+exports.first = function(channels, default_value) {
   return function() {
     for (var i = 0; i < channels.length; ++i) {
       var arr = channels[i].take()();
