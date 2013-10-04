@@ -91,7 +91,7 @@ exports.go = function(machine, args) {
   go_(gen, gen.next());
 }
 
-exports.first = function(channels, default_value) {
+var first = exports.first = function(channels, default_value) {
   return function() {
     for (var i = 0; i < channels.length; ++i) {
       var arr = channels[i].take()();
@@ -106,4 +106,20 @@ exports.first = function(channels, default_value) {
     else
       return ["continue", default_value]
   }
+}
+
+var shuffle = function(items) {
+  var out = items.slice();
+
+  for (i = items.length - 1; i > 0; --i) {
+    var k = Math.floor(Math.random() * (i + 1));
+    var t = out[i];
+    out[i] = out[k];
+    out[k] = t;
+  }
+  return out;
+}
+
+exports.random = function(channels, default_value) {
+  return first(shuffle(channels), default_value);
 }

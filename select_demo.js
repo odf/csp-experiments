@@ -21,7 +21,7 @@ var main = function* () {
   var active = chans.slice();
 
   while (active.length > 0) {
-    var res = yield csp.first(active);
+    var res = yield csp.random(active);
     var ch  = res[0];
     var val = res[1];
     if (val == null) {
