@@ -98,7 +98,7 @@ var first = exports.first = function(channels, default_value) {
       var state = arr[0];
       var value = arr[1];
       if (state == "continue") {
-        return ["continue", [channels[i], value]];
+        return ["continue", [i, value]];
       }
     }
     if (default_value === undefined)
