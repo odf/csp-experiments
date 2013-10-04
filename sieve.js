@@ -6,23 +6,24 @@ var csp = require("./csp");
 
 var generate = function* (ch, stop) {
   for (var i = 2;; i++) {
-    if (yield csp.select([stop], false)) {
+    if (yield csp.select([stop], false))
       break;
-    }
     yield ch.put(i);
   }
+
   ch.close()
 };
 
 var filter = function* (inch, outch, prime) {
   for (;;) {
     var i = yield inch.take();
-    if (i == null) {
+
+    if (i == null)
       break;
-    } else if (i % prime != 0) {
+    else if (i % prime != 0)
       yield outch.put(i);
-    }
   }
+
   outch.close()
 };
 
@@ -31,7 +32,8 @@ var sieve = function* () {
   var stop = csp.chan();
   csp.go(generate, [ch, stop]);
 
-  var n = parseInt(process.argv[2] | "50")
+  var n = parseInt(process.argv[2] || "50")
+  console.log("The first " + n + " prime numbers:")
 
   for (var i = 0; i < n; i++) {
     var prime = yield ch.take();
