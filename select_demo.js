@@ -22,11 +22,14 @@ var main = function* () {
 
   while (active.length > 0) {
     var res = yield csp.random(active);
-    var i   = res[0];
+    var ch  = res[0];
     var val = res[1];
-
     if (val == null) {
-      active.splice(i, 1);
+      for (var i = 0; i < N; ++i) {
+        if (ch == active[i]) {
+          active.splice(i, 1);
+        }
+      }
     } else {
       console.log(val);
     }
