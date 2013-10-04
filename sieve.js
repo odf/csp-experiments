@@ -41,7 +41,7 @@ var sieve = function* () {
     ch = ch1;
   }
 
-  yield stop.put(true)
+  stop.close();
 };
 
 csp.go(sieve);
