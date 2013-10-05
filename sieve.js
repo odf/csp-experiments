@@ -6,7 +6,7 @@ var csp = require("./csp");
 
 var generate = function* (ch, stop) {
   for (var i = 2;; i++) {
-    if (yield csp.first([stop], false))
+    if (yield csp.select([stop], false))
       break;
     yield ch.put(i);
   }
