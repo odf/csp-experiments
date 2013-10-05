@@ -138,3 +138,19 @@ exports.select = function(channels, default_value) {
       return ["continue", default_value]
   }
 }
+
+exports.wrap_async = function(channel, fn, args) {
+  var tmp = args.slice();
+  tmp.push(function(err, val) {
+    if (err) {
+      throw new Error(err);
+    } else {
+      var state = channel.put(val)()[0];
+      if (state == "park") {
+        throw new Error("write to blocked channel within callback");
+      }
+    }
+  });
+
+  fn.apply(undefined, tmp);
+}
