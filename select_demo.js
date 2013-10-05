@@ -4,6 +4,7 @@ var N = 3;
 
 var f = function* (ch, x) {
   for (var i = 0; i < 20; ++i) {
+    yield csp.timeout(Math.random() * 100).take();
     yield ch.put(i + x);
   }
   ch.close()
