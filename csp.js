@@ -125,10 +125,7 @@ exports.apply = function(fn, args) {
     if (err) {
       errch.put(new Error(err))();
     } else {
-      var state = outch.put(val)()[0];
-      if (state == "park") {
-        errch.put(new Error("write to blocked channel within callback"))();
-      }
+      outch.put(val)();
     }
   });
 
