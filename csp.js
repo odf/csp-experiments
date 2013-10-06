@@ -116,7 +116,10 @@ exports.select = function(channels, default_value) {
   }
 }
 
-exports.apply_async = function(outch, errch, fn, args) {
+exports.apply_async = function(fn, args) {
+  var outch = chan();
+  var errch = chan();
+
   var tmp = args.slice();
   tmp.push(function(err, val) {
     if (err) {
@@ -130,4 +133,6 @@ exports.apply_async = function(outch, errch, fn, args) {
   });
 
   fn.apply(undefined, tmp);
+
+  return { 'out': outch, 'err': errch };
 }

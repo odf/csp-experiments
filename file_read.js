@@ -3,20 +3,17 @@ var csp = require('./csp');
 
 
 var sync = function(fn, args) {
-  var outch = csp.chan();
-  var errch = csp.chan();
-
-  csp.apply_async(outch, errch, fn, args);
+  var channels = csp.apply_async(fn, args);
 
   return function() {
-    var res = csp.select([outch, errch])();
+    var res = csp.select([channels.out, channels.err])();
     var state = res[0];
     var val = res[1];
 
     if (state == "continue") {
       var ch = val[0];
       var out = val[1];
-      if (ch == errch) {
+      if (ch == channels.err) {
         return ["error", out];
       } else {
         return ["continue", out];
