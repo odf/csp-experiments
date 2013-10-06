@@ -88,18 +88,12 @@ var chan = exports.chan = function(size) {
   return new Chan(size);
 }
 
-exports.timeout = function(milliseconds) {
-  var ch = chan(0);
-  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
-  return ch;
-}
-
 exports.go = function(machine, args) {
   var gen = machine.apply(undefined, args);
   go_(gen, gen.next());
 }
 
-exports.select = function(channels, default_value) {
+var select = exports.select = function(channels, default_value) {
   return function() {
     for (var i = 0; i < channels.length; ++i) {
       var arr = channels[i].take()();
@@ -114,6 +108,32 @@ exports.select = function(channels, default_value) {
     else
       return ["continue", default_value]
   }
+}
+
+exports.consume = function(inch, errch) {
+  return function() {
+    var res = select([inch, errch])();
+    var state = res[0];
+    var val = res[1];
+
+    if (state == "continue") {
+      var ch = val[0];
+      var out = val[1];
+      if (ch == errch) {
+        return ["error", out];
+      } else {
+        return ["continue", out];
+      }
+    } else {
+      return [state, out];
+    }
+  }
+}
+
+exports.timeout = function(milliseconds) {
+  var ch = chan(0);
+  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
+  return ch;
 }
 
 exports.apply = function(fn, args) {
