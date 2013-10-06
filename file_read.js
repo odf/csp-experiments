@@ -3,7 +3,7 @@ var csp = require('./csp');
 
 
 var sync = function(fn, args) {
-  var channels = csp.apply_async(fn, args);
+  var channels = csp.apply(fn, args);
 
   return function() {
     var res = csp.select([channels.out, channels.err])();

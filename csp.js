@@ -116,7 +116,7 @@ exports.select = function(channels, default_value) {
   }
 }
 
-exports.apply_async = function(fn, args) {
+exports.apply = function(fn, args) {
   var outch = chan();
   var errch = chan();
 
