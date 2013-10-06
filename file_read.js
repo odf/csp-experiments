@@ -3,9 +3,28 @@ var csp = require('./csp');
 
 
 var sync = function(fn, args) {
-  var ch = csp.chan();
-  csp.wrap_async(ch, fn, args);
-  return ch.take();
+  var outch = csp.chan();
+  var errch = csp.chan();
+
+  csp.apply_async(outch, errch, fn, args);
+
+  return function() {
+    var res = csp.select([outch, errch])();
+    var state = res[0];
+    var val = res[1];
+
+    if (state == "continue") {
+      var ch = val[0];
+      var out = val[1];
+      if (ch == errch) {
+        return ["error", out];
+      } else {
+        return ["continue", out];
+      }
+    } else {
+      return [state, out];
+    }
+  }
 }
 
 csp.go(function* () {

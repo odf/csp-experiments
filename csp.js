@@ -98,12 +98,14 @@ var go_ = function(machine, step) {
     var value = arr[1];
 
     switch (state) {
-      case "park":
-        setImmediate(function() { go_(machine, step); });
-        return;
-      case "continue":
-        step = machine.next(value);
-        break;
+    case "error":
+      machine.throw(value);
+    case "park":
+      setImmediate(function() { go_(machine, step); });
+      return;
+    case "continue":
+      step = machine.next(value);
+      break;
     }
   }
 }
@@ -128,8 +130,8 @@ exports.select = function(channels, default_value) {
       var arr = channels[i].take()();
       var state = arr[0];
       var value = arr[1];
-      if (state == "continue") {
-        return ["continue", [channels[i], value]];
+      if (state != "park") {
+        return [state, [channels[i], value]];
       }
     }
     if (default_value === undefined)
@@ -139,15 +141,15 @@ exports.select = function(channels, default_value) {
   }
 }
 
-exports.wrap_async = function(channel, fn, args) {
+exports.apply_async = function(outch, errch, fn, args) {
   var tmp = args.slice();
   tmp.push(function(err, val) {
     if (err) {
-      throw new Error(err);
+      errch.put(new Error(err))();
     } else {
-      var state = channel.put(val)()[0];
+      var state = outch.put(val)()[0];
       if (state == "park") {
-        throw new Error("write to blocked channel within callback");
+        errch.put(new Error("write to blocked channel within callback"))();
       }
     }
   });
