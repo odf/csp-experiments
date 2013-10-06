@@ -64,33 +64,6 @@ Chan.prototype.close = function() {
 }
 
 
-function Timeout(milliseconds) {
-  this.closed = false;
-  this.t = setTimeout(function() { this.close(); }.bind(this), milliseconds);
-}
-
-Timeout.prototype.put = function(val) {
-  return function() {
-    return ["continue", null];
-  }.bind(this);
-}
-
-Timeout.prototype.take = function() {
-  return function() {
-    if (this.closed) {
-      return ["continue", null];
-    } else {
-      return ["park", null];
-    }
-  }.bind(this);
-}
-
-Timeout.prototype.close = function() {
-  this.closed = true;
-  clearTimeout(this.t);
-}
-
-
 var go_ = function(machine, step) {
   while(!step.done) {
     var arr   = step.value();
@@ -111,12 +84,14 @@ var go_ = function(machine, step) {
 }
 
 
-exports.chan = function() {
-  return new Chan();
+var chan = exports.chan = function(size) {
+  return new Chan(size);
 }
 
 exports.timeout = function(milliseconds) {
-  return new Timeout(milliseconds);
+  var ch = chan(0);
+  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
+  return ch;
 }
 
 exports.go = function(machine, args) {
