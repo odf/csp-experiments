@@ -11,7 +11,7 @@ var generate = function* (ch, stop) {
     yield ch.put(i);
   }
 
-  ch.close()
+  ch.close();
 };
 
 var filter = function* (inch, outch, prime) {
@@ -24,7 +24,7 @@ var filter = function* (inch, outch, prime) {
       yield outch.put(i);
   }
 
-  outch.close()
+  outch.close();
 };
 
 var sieve = function* () {
@@ -32,8 +32,8 @@ var sieve = function* () {
   var stop = csp.chan();
   csp.go(generate, [ch, stop]);
 
-  var n = parseInt(process.argv[2] || "50")
-  console.log("The first " + n + " prime numbers:")
+  var n = parseInt(process.argv[2] || "50");
+  console.log("The first " + n + " prime numbers:");
 
   for (var i = 0; i < n; i++) {
     var prime = yield ch.take();

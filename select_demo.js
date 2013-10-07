@@ -7,7 +7,7 @@ var f = function* (ch, x) {
     yield csp.timeout(Math.random() * 100).take();
     yield ch.put(i + x);
   }
-  ch.close()
+  ch.close();
 }
 
 var merge = function* (inchs, outch) {
@@ -38,6 +38,7 @@ var all = function* (inchs, outch) {
   for (var i = 0; i < inchs.length; ++i) {
     indices.push(i);
   }
+
   var results = new Array(inchs.length);
 
   while (active.length > 0) {
@@ -79,7 +80,7 @@ var a = function* () {
     if (val === null)
       break;
     else
-      console.log(val)
+      console.log(val);
   }
 }
 

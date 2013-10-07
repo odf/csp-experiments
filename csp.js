@@ -12,19 +12,17 @@ Buffer.prototype.isFull = function() {
 }
 
 Buffer.prototype.add = function(val) {
-  if (this.isFull()) {
+  if (this.isFull())
     throw new Error("attempt to write to full buffer");
-  } else {
+  else
     this.contents.unshift(val);
-  }
 }
 
 Buffer.prototype.remove = function() {
-  if (this.count() == 0) {
+  if (this.count() == 0)
     throw new Error("attempt to read from empty buffer");
-  } else {
+  else
     return this.contents.pop();
-  }
 }
 
 
@@ -35,11 +33,11 @@ function Chan(size) {
 
 Chan.prototype.put = function(val) {
   return function() {
-    if (this.isClosed) {
+    if (this.isClosed)
       return { state: "continue" };
-    } else if (this.buffer.isFull()) {
+    else if (this.buffer.isFull())
       return { state: "park" };
-    } else {
+    else {
       this.buffer.add(val);
       return { state: "continue" };
     }
@@ -48,14 +46,12 @@ Chan.prototype.put = function(val) {
 
 Chan.prototype.take = function() {
   return function() {
-    if (this.buffer.count() > 0) {
-      var val = this.buffer.remove();
-      return { state: "continue", value: val };
-    } else if (this.isClosed) {
+    if (this.buffer.count() > 0)
+      return { state: "continue", value: this.buffer.remove() };
+    else if (this.isClosed)
       return { state: "continue", value: null };
-    } else {
+    else
       return { state: "park" };
-    }
   }.bind(this);
 }
 
@@ -95,9 +91,8 @@ var select = exports.select = function(channels, default_value) {
   return function() {
     for (var i = 0; i < channels.length; ++i) {
       var res = channels[i].take()();
-      if (res.state == "continue") {
+      if (res.state == "continue")
         return { state: "continue", value: [channels[i], res.value] };
-      }
     }
     if (default_value === undefined)
       return { state: "park" };
@@ -114,22 +109,17 @@ exports.timeout = function(milliseconds) {
 
 var callback = function(ch) {
   return function(err, val) {
-    if (err) {
+    if (err)
       ch.put({ state: "error", value: new Error(err) })();
-    } else {
+    else
       ch.put({ state: "continue", value: val })();
-    }
   }
 }
 
 var unwrap = function(ch) {
   return function() {
     var res = ch.take()();
-    if (res.state == "continue") {
-      return res.value;
-    } else {
-      return res;
-    }
+    return (res.state == "continue") ? res.value : res;
   }
 }
 
