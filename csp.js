@@ -36,12 +36,12 @@ function Chan(size) {
 Chan.prototype.put = function(val) {
   return function() {
     if (this.isClosed) {
-      return ["continue", null];
+      return { state: "continue" };
     } else if (this.buffer.isFull()) {
-      return ["park", null];
+      return { state: "park" };
     } else {
       this.buffer.add(val);
-      return ["continue", null];
+      return { state: "continue" };
     }
   }.bind(this);
 }
@@ -50,11 +50,11 @@ Chan.prototype.take = function() {
   return function() {
     if (this.buffer.count() > 0) {
       var val = this.buffer.remove();
-      return ["continue", val];
+      return { state: "continue", value: val };
     } else if (this.isClosed) {
-      return ["continue", null];
+      return { state: "continue", value: null };
     } else {
-      return ["park", null];
+      return { state: "park" };
     }
   }.bind(this);
 }
@@ -66,18 +66,16 @@ Chan.prototype.close = function() {
 
 var go_ = function(machine, step) {
   while(!step.done) {
-    var arr   = step.value();
-    var state = arr[0];
-    var value = arr[1];
+    var res = step.value();
 
-    switch (state) {
+    switch (res.state) {
     case "error":
-      machine.throw(value);
+      machine.throw(res.value);
     case "park":
       setImmediate(function() { go_(machine, step); });
       return;
     case "continue":
-      step = machine.next(value);
+      step = machine.next(res.value);
       break;
     }
   }
@@ -96,17 +94,15 @@ var chan = exports.chan = function(size) {
 var select = exports.select = function(channels, default_value) {
   return function() {
     for (var i = 0; i < channels.length; ++i) {
-      var arr = channels[i].take()();
-      var state = arr[0];
-      var value = arr[1];
-      if (state != "park") {
-        return [state, [channels[i], value]];
+      var res = channels[i].take()();
+      if (res.state == "continue") {
+        return { state: "continue", value: [channels[i], res.value] };
       }
     }
     if (default_value === undefined)
-      return ["park", null];
+      return { state: "park" };
     else
-      return ["continue", default_value]
+      return { state: "continue", value: default_value };
   }
 }
 
@@ -119,9 +115,9 @@ exports.timeout = function(milliseconds) {
 var callback = function(ch) {
   return function(err, val) {
     if (err) {
-      ch.put(["error", new Error(err)])();
+      ch.put({ state: "error", value: new Error(err) })();
     } else {
-      ch.put(["continue", val])();
+      ch.put({ state: "continue", value: val })();
     }
   }
 }
@@ -129,8 +125,8 @@ var callback = function(ch) {
 var unwrap = function(ch) {
   return function() {
     var res = ch.take()();
-    if (res[0] == "continue") {
-      return res[1];
+    if (res.state == "continue") {
+      return res.value;
     } else {
       return res;
     }
