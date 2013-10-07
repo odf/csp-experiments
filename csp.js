@@ -116,43 +116,31 @@ exports.timeout = function(milliseconds) {
   return ch;
 }
 
-
-var consume = function(inch, errch) {
-  return function() {
-    var res = select([inch, errch])();
-    var state = res[0];
-    var val = res[1];
-
-    if (state == "continue") {
-      var ch = val[0];
-      var out = val[1];
-      if (ch == errch) {
-        return ["error", out];
-      } else {
-        return ["continue", out];
-      }
+var callback = function(ch) {
+  return function(err, val) {
+    if (err) {
+      ch.put(["error", new Error(err)])();
     } else {
-      return [state, out];
+      ch.put(["continue", val])();
+    }
+  }
+}
+
+var unwrap = function(ch) {
+  return function() {
+    var res = ch.take()();
+    if (res[0] == "continue") {
+      return res[1];
+    } else {
+      return res;
     }
   }
 }
 
 var apply = exports.apply = function(fn, context, args) {
-  var outch = chan();
-  var errch = chan();
-
-  var tmp = args.slice();
-  tmp.push(function(err, val) {
-    if (err) {
-      errch.put(new Error(err))();
-    } else {
-      outch.put(val)();
-    }
-  });
-
-  fn.apply(context, tmp);
-
-  return consume(outch, errch);
+  var ch = chan();
+  fn.apply(context, args.concat(callback(ch)));
+  return unwrap(ch);
 }
 
 exports.bind = function(fn, context)
