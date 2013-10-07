@@ -1,12 +1,8 @@
 var fs  = require('fs');
 var csp = require('./csp');
 
-
-var sync = function(fn, args) {
-  var channels = csp.apply(fn, args);
-  return csp.consume(channels.out, channels.err);
-}
+var readFile = csp.bind(fs.readFile, fs);
 
 csp.go(function* () {
-  console.log(yield sync(fs.readFile, [process.argv[2], { encoding: 'utf8' }]));
+  console.log(yield readFile(process.argv[2], { encoding: 'utf8' }));
 })

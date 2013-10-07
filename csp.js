@@ -83,14 +83,14 @@ var go_ = function(machine, step) {
   }
 }
 
-
-var chan = exports.chan = function(size) {
-  return new Chan(size);
-}
-
 exports.go = function(machine, args) {
   var gen = machine.apply(undefined, args);
   go_(gen, gen.next());
+}
+
+
+var chan = exports.chan = function(size) {
+  return new Chan(size);
 }
 
 var select = exports.select = function(channels, default_value) {
@@ -110,7 +110,14 @@ var select = exports.select = function(channels, default_value) {
   }
 }
 
-exports.consume = function(inch, errch) {
+exports.timeout = function(milliseconds) {
+  var ch = chan(0);
+  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
+  return ch;
+}
+
+
+var consume = function(inch, errch) {
   return function() {
     var res = select([inch, errch])();
     var state = res[0];
@@ -130,13 +137,7 @@ exports.consume = function(inch, errch) {
   }
 }
 
-exports.timeout = function(milliseconds) {
-  var ch = chan(0);
-  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
-  return ch;
-}
-
-exports.apply = function(fn, args) {
+var apply = exports.apply = function(fn, context, args) {
   var outch = chan();
   var errch = chan();
 
@@ -149,7 +150,15 @@ exports.apply = function(fn, args) {
     }
   });
 
-  fn.apply(undefined, tmp);
+  fn.apply(context, tmp);
 
-  return { 'out': outch, 'err': errch };
+  return consume(outch, errch);
+}
+
+exports.bind = function(fn, context)
+{
+  return function() {
+    var args = Array.prototype.slice.call(arguments);
+    return apply(fn, context, args);
+  }
 }
