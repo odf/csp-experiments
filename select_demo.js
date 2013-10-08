@@ -15,45 +15,28 @@ var merge = function* (inchs, outch) {
 
   while (active.length > 0) {
     var res = yield csp.select(active);
-    var ch  = res[0];
-    var val = res[1];
-    if (val == null) {
-      for (var i = 0; i < N; ++i) {
-        if (ch == active[i]) {
-          active.splice(i, 1);
-          break;
-        }
-      }
-    } else {
-      yield outch.put(val);
-    }
+    if (res.value == null)
+      active.splice(res.index, 1);
+    else
+      yield outch.put(res.value);
   }
 
   yield outch.put(null);
 }
 
 var all = function* (inchs, outch) {
-  var active = inchs.slice();
-  var indices = []
-  for (var i = 0; i < inchs.length; ++i) {
-    indices.push(i);
-  }
-
   var results = new Array(inchs.length);
+  var active  = inchs.slice();
+  var indices = []
+  for (var i = 0; i < inchs.length; ++i)
+    indices.push(i);
 
   while (active.length > 0) {
     var res = yield csp.select(active);
-    var ch  = res[0];
-    var val = res[1];
-
-    for (var i = 0; i < active.length; ++i) {
-      if (ch == active[i]) {
-        results[indices[i]] = val;
-        active.splice(i, 1);
-        indices.splice(i, 1);
-        break;
-      }
-    }
+    var i = res.index;
+    results[indices[i]] = res.value;
+    active.splice(i, 1);
+    indices.splice(i, 1);
   }
 
   if (results.every(function(x) { return x === null; }))

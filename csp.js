@@ -91,8 +91,12 @@ var select = exports.select = function(channels, default_value) {
   return function() {
     for (var i = 0; i < channels.length; ++i) {
       var res = channels[i].take()();
-      if (res.state == "continue")
-        return { state: "continue", value: [channels[i], res.value] };
+      if (res.state == "continue") {
+        return { state: "continue",
+                 value: { index:   i,
+                          channel: channels[i],
+                          value:   res.value } };
+      }
     }
     if (default_value === undefined)
       return { state: "park" };

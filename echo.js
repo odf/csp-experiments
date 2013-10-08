@@ -36,10 +36,9 @@ csp.go(function* () {
 
   while (true) {
     var res = yield csp.select([inch, statch]);
-    var ch = res[0];
-    var out = res[1];
+    var out = res.value;
 
-    if (ch == statch)
+    if (res.channel == statch)
     {
       if (out.status == 'error')
         throw out.value;
