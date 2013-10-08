@@ -1,3 +1,26 @@
+var go_ = function(machine, step) {
+  while(!step.done) {
+    var res = step.value();
+
+    switch (res.state) {
+    case "error":
+      machine.throw(res.value);
+    case "park":
+      setImmediate(function() { go_(machine, step); });
+      return;
+    case "continue":
+      step = machine.next(res.value);
+      break;
+    }
+  }
+}
+
+exports.go = function(machine, args) {
+  var gen = machine.apply(undefined, args);
+  go_(gen, gen.next());
+}
+
+
 function Buffer(size) {
   this.size = size || 1;
   this.contents = [];
@@ -59,33 +82,10 @@ Chan.prototype.close = function() {
   this.isClosed = true;
 }
 
-
-var go_ = function(machine, step) {
-  while(!step.done) {
-    var res = step.value();
-
-    switch (res.state) {
-    case "error":
-      machine.throw(res.value);
-    case "park":
-      setImmediate(function() { go_(machine, step); });
-      return;
-    case "continue":
-      step = machine.next(res.value);
-      break;
-    }
-  }
-}
-
-exports.go = function(machine, args) {
-  var gen = machine.apply(undefined, args);
-  go_(gen, gen.next());
-}
-
-
 var chan = exports.chan = function(size) {
   return new Chan(size);
 }
+
 
 var select = exports.select = function(channels, default_value) {
   return function() {
@@ -101,11 +101,6 @@ var select = exports.select = function(channels, default_value) {
   }
 }
 
-exports.timeout = function(milliseconds) {
-  var ch = chan(0);
-  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
-  return ch;
-}
 
 var callback = function(ch) {
   return function(err, val) {
@@ -135,4 +130,11 @@ exports.bind = function(fn, context)
     var args = Array.prototype.slice.call(arguments);
     return apply(fn, context, args);
   }
+}
+
+
+exports.timeout = function(milliseconds) {
+  var ch = chan(0);
+  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
+  return ch;
 }
