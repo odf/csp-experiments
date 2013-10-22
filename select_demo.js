@@ -51,12 +51,12 @@ var chans = [];
 for (var i = 0; i < N; ++i) {
   var ch = csp.chan();
   chans.push(ch);
-  csp.go(f, [ch, i / 10]);
+  csp.go(f, ch, i / 10);
 }
 
 var a = function* () {
   var ch = csp.chan();
-  csp.go(merge, [chans, ch]);
+  csp.go(merge, chans, ch);
 
   while (true) {
     var val = yield ch.take();
@@ -71,7 +71,7 @@ var b = function* () {
   var ch = csp.chan();
 
   while(true) {
-    csp.go(all, [chans, ch]);
+    csp.go(all, chans, ch);
     var val = yield ch.take();
     if (val == null)
       break;

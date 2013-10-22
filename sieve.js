@@ -30,7 +30,7 @@ var filter = function* (inch, outch, prime) {
 var sieve = function* () {
   var ch = csp.chan();
   var stop = csp.chan();
-  csp.go(generate, [ch, stop]);
+  csp.go(generate, ch, stop);
 
   var n = parseInt(process.argv[2] || "50");
   console.log("The first " + n + " prime numbers:");
@@ -39,7 +39,7 @@ var sieve = function* () {
     var prime = yield ch.take();
     console.log(prime);
     var ch1 = csp.chan();
-    csp.go(filter, [ch, ch1, prime]);
+    csp.go(filter, ch, ch1, prime);
     ch = ch1;
   }
 
