@@ -1,27 +1,31 @@
-var csp = require('./csp')
+var csp = require('../src/csp')
 
-var fromstream = function(stream, outch)
+var fromStream = function(stream)
 {
+  var ch = csp.chan();
+
   stream.on('data', function(chunk) {
-    csp.go(function* () {
-      yield outch.put(chunk);
+    csp.go(function*() {
+      yield ch.put(chunk);
     });
   });
 
   stream.on('end', function() {
-    outch.close();
+    ch.close();
   });
 
   stream.on('error', function(err) {
     throw new Error(err);
   });
+
+  return ch;
 };
 
 csp.go(function* () {
-  var ch = csp.chan();
+  var ch;
 
   process.stdin.setEncoding('utf8');
-  fromstream(process.stdin, ch);
+  ch = fromStream(process.stdin);
 
   while (ch.more()) {
     console.log((yield ch.take()) || "DONE");
