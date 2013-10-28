@@ -2,5 +2,6 @@
   "name": "csp-experiments",
   "version": "0.0.1",
   "private": true,
+  "main": "./csp.js",
   "dependencies": {}
 }
