@@ -1,4 +1,4 @@
-var csp = require('./csp');
+var csp = require('../src/csp');
 
 var N = 3;
 
@@ -27,25 +27,31 @@ var merge = function*(inchs, outch) {
   outch.close();
 }
 
-var all = function*(inchs, outch) {
-  var results = new Array(inchs.length);
-  var active  = inchs.slice();
-  var indices = []
-  for (var i = 0; i < inchs.length; ++i)
-    indices.push(i);
+var zip = function*(inchs, outch) {
+  var results, active, indices, i, res;
 
-  while (active.length > 0) {
-    var res = yield csp.select(active);
-    var i = res.index;
-    results[indices[i]] = res.value;
-    active.splice(i, 1);
-    indices.splice(i, 1);
-  }
+  results = new Array(inchs.length);
 
-  if (results.every(function(x) { return x === null; }) &&
-      inchs.every(function(ch) { return !ch.more(); })) {
-    outch.close();
-  } else {
+  while (true) {
+    active  = inchs.slice();
+    indices = []
+    for (i = 0; i < inchs.length; ++i)
+      indices.push(i);
+
+    while (active.length > 0) {
+      res = yield csp.select(active);
+      i = res.index;
+
+      if (res.value == null && !active[i].more()) {
+        outch.close();
+        return;
+      }
+
+      results[indices[i]] = res.value;
+      active.splice(i, 1);
+      indices.splice(i, 1);
+    }
+
     yield outch.put(results);
   }
 }
@@ -70,9 +76,9 @@ var a = function* () {
 
 var b = function* () {
   var ch = csp.chan();
+  csp.go(zip, chans, ch);
 
   while(ch.more()) {
-    csp.go(all, chans, ch);
     console.log(yield ch.take());
   }
 }
