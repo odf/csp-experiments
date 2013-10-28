@@ -1,6 +1,6 @@
 var csp = require('./csp')
 
-fromstream = function(stream, outch, statch)
+var fromstream = function(stream, outch)
 {
   stream.on('data', function(chunk) {
     csp.go(function* () {
@@ -9,43 +9,21 @@ fromstream = function(stream, outch, statch)
   });
 
   stream.on('end', function() {
-    if (statch) {
-      csp.go(function* () {
-        yield statch.put({ status: 'end' });
-      });
-    }
+    outch.close();
   });
 
   stream.on('error', function(err) {
-    if (statch) {
-      csp.go(function* () {
-        yield statch.put({ status: 'error', value: new Error(err) });
-      });
-    } else {
-      throw new Error(err);
-    }
+    throw new Error(err);
   });
-}
+};
 
 csp.go(function* () {
-  var inch = csp.chan();
-  var statch = csp.chan();
+  var ch = csp.chan();
 
   process.stdin.setEncoding('utf8');
-  fromstream(process.stdin, inch, statch);
+  fromstream(process.stdin, ch);
 
-  while (true) {
-    var res = yield csp.select([inch, statch]);
-    var out = res.value;
-
-    if (res.channel == statch)
-    {
-      if (out.status == 'error')
-        throw out.value;
-      else if (out.status == 'end')
-        break;
-    } else {
-      console.log(out);
-    }
+  while (ch.more()) {
+    console.log((yield ch.take()) || "DONE");
   }
 });

@@ -83,6 +83,10 @@ Chan.prototype.close = function() {
   this.isClosed = true;
 }
 
+Chan.prototype.more = function() {
+  return !this.isClosed || this.buffer.count() > 0;
+}
+
 var chan = exports.chan = function(size) {
   return new Chan(size);
 }

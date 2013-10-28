@@ -2,7 +2,7 @@ var csp = require('./csp');
 
 var N = 3;
 
-var f = function* (ch, x) {
+var f = function*(ch, x) {
   for (var i = 0; i < 20; ++i) {
     yield csp.timeout(Math.random() * 100).take();
     yield ch.put(i + x);
@@ -10,21 +10,24 @@ var f = function* (ch, x) {
   ch.close();
 }
 
-var merge = function* (inchs, outch) {
+var merge = function*(inchs, outch) {
   var active = inchs.slice();
 
   while (active.length > 0) {
     var res = yield csp.select(active);
-    if (res.value == null)
-      active.splice(res.index, 1);
-    else
+    if (res.value == null) {
+      if (!active[res.index].more()) {
+        active.splice(res.index, 1);
+      }
+    } else {
       yield outch.put(res.value);
+    }
   }
 
-  yield outch.put(null);
+  outch.close();
 }
 
-var all = function* (inchs, outch) {
+var all = function*(inchs, outch) {
   var results = new Array(inchs.length);
   var active  = inchs.slice();
   var indices = []
@@ -39,10 +42,12 @@ var all = function* (inchs, outch) {
     indices.splice(i, 1);
   }
 
-  if (results.every(function(x) { return x === null; }))
-    yield outch.put(null);
-  else
+  if (results.every(function(x) { return x === null; }) &&
+      inchs.every(function(ch) { return !ch.more(); })) {
+    outch.close();
+  } else {
     yield outch.put(results);
+  }
 }
 
 
@@ -58,26 +63,18 @@ var a = function* () {
   var ch = csp.chan();
   csp.go(merge, chans, ch);
 
-  while (true) {
-    var val = yield ch.take();
-    if (val === null)
-      break;
-    else
-      console.log(val);
+  while (ch.more()) {
+    console.log(yield ch.take());
   }
 }
 
 var b = function* () {
   var ch = csp.chan();
 
-  while(true) {
+  while(ch.more()) {
     csp.go(all, chans, ch);
-    var val = yield ch.take();
-    if (val == null)
-      break;
-    else
-      console.log(val);
-  };
+    console.log(yield ch.take());
+  }
 }
 
 if (process.argv[2] == 'b')
