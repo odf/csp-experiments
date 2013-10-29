@@ -2,9 +2,15 @@ var csp = require('../src/csp');
 
 var N = 3;
 
+var timeout = function(milliseconds) {
+  var ch = csp.chan(0);
+  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
+  return ch;
+}
+
 var f = function*(ch, x) {
   for (var i = 0; i < 20; ++i) {
-    yield csp.timeout(Math.random() * 100).take();
+    yield timeout(Math.random() * 100).take();
     yield ch.put(i + x);
   }
   ch.close();

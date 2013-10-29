@@ -87,12 +87,12 @@ Chan.prototype.more = function() {
   return !this.isClosed || this.buffer.count() > 0;
 }
 
-var chan = exports.chan = function(size) {
+exports.chan = function(size) {
   return new Chan(size);
 }
 
 
-var select = exports.select = function(channels, default_value) {
+exports.select = function(channels, default_value) {
   return function() {
     for (var i = 0; i < channels.length; ++i) {
       var res = channels[i].take()();
@@ -110,40 +110,17 @@ var select = exports.select = function(channels, default_value) {
   }
 }
 
-
-var callback = function(ch) {
-  return function(err, val) {
-    if (err)
-      ch.put({ state: "error", value: new Error(err) })();
-    else
-      ch.put({ state: "continue", value: val })();
-  }
+exports.wrapError = function(err) {
+  return { state: "error", value: err };
 }
 
-var unwrap = function(ch) {
+exports.wrapValue = function(val) {
+  return { state: "continue", value: val };
+}
+
+exports.unwrap = function(ch) {
   return function() {
     var res = ch.take()();
     return (res.state == "continue") ? res.value : res;
   }
-}
-
-var apply = exports.apply = function(fn, context, args) {
-  var ch = chan();
-  fn.apply(context, args.concat(callback(ch)));
-  return unwrap(ch);
-}
-
-exports.bind = function(fn, context)
-{
-  return function() {
-    var args = Array.prototype.slice.call(arguments);
-    return apply(fn, context, args);
-  }
-}
-
-
-exports.timeout = function(milliseconds) {
-  var ch = chan(0);
-  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
-  return ch;
 }
