@@ -1,30 +1,14 @@
-var fs  = require('fs');
-var csp = require('../src/csp');
-
-var callback = function(ch) {
-  return function(err, val) {
-    csp.go(function*() {
-      yield ch.put(err ? csp.wrapError(new Error(err)) : csp.wrapValue(val));
-    });
-  }
-}
-
-var apply = function(fn, context, args) {
-  var ch = csp.chan();
-  fn.apply(context, args.concat(callback(ch)));
-  return csp.unwrap(ch);
-}
-
-var bind = function(fn, context)
-{
-  return function() {
-    var args = Array.prototype.slice.call(arguments);
-    return apply(fn, context, args);
-  }
-}
-
-var readFile = bind(fs.readFile, fs);
+var fs   = require('fs');
+var csp  = require('../src/csp');
+var cspn = require('../src/node');
 
 csp.go(function* () {
-  console.log(yield readFile(process.argv[2], { encoding: 'utf8' }));
+  var path = process.argv[2];
+  var options = { encoding: 'utf8' };
+
+  console.log(yield cspn.call(fs.readFile, fs, path, options));
+
+  var read = cspn.bind(fs.readFile, fs);
+
+  console.log(yield read(path, options));
 })
