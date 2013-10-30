@@ -23,3 +23,24 @@ exports.bind = function(fn, context)
 {
   return call.bind(null, fn, context);
 };
+
+exports.fromStream = function(stream)
+{
+  var ch = csp.chan();
+
+  stream.on('data', function(chunk) {
+    csp.go(function*() {
+      yield ch.put(chunk);
+    });
+  });
+
+  stream.on('end', function() {
+    ch.close();
+  });
+
+  stream.on('error', function(err) {
+    throw new Error(err);
+  });
+
+  return ch;
+};

@@ -1,33 +1,15 @@
-var csp = require('../src/csp')
-
-var fromStream = function(stream)
-{
-  var ch = csp.chan();
-
-  stream.on('data', function(chunk) {
-    csp.go(function*() {
-      yield ch.put(chunk);
-    });
-  });
-
-  stream.on('end', function() {
-    ch.close();
-  });
-
-  stream.on('error', function(err) {
-    throw new Error(err);
-  });
-
-  return ch;
-};
+var csp = require('../src/csp');
+var cspn = require('../src/node');
 
 csp.go(function* () {
-  var ch;
+  var ch, val;
 
   process.stdin.setEncoding('utf8');
-  ch = fromStream(process.stdin);
+  ch = cspn.fromStream(process.stdin);
 
   while (ch.more()) {
-    console.log((yield ch.take()) || "DONE");
+    val = yield ch.take();
+    if (val !== null)
+      console.log(val);
   }
 });
