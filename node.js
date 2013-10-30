@@ -1,17 +1,17 @@
-var csp = require('./csp');
+var cc = require('./core');
 
 var callback = function(ch) {
   return function(err, val) {
-    csp.go(function*() {
-      yield ch.put(err ? csp.wrapError(new Error(err)) : csp.wrapValue(val));
+    cc.go(function*() {
+      yield ch.put(err ? cc.wrapError(new Error(err)) : cc.wrapValue(val));
     });
   }
 };
 
 var apply = exports.apply = function(fn, context, args) {
-  var ch = csp.chan();
+  var ch = cc.chan();
   fn.apply(context, args.concat(callback(ch)));
-  return csp.unwrap(ch);
+  return cc.unwrap(ch);
 };
 
 var call = exports.call = function(fn, context) {
@@ -26,10 +26,10 @@ exports.bind = function(fn, context)
 
 exports.fromStream = function(stream)
 {
-  var ch = csp.chan();
+  var ch = cc.chan();
 
   stream.on('data', function(chunk) {
-    csp.go(function*() {
+    cc.go(function*() {
       yield ch.put(chunk);
     });
   });

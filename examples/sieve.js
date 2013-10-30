@@ -2,7 +2,7 @@
 //
 // Added an explicit control channel to shut down the chain of "goroutines".
 
-var csp = require("../csp");
+var cc = require("../core");
 
 var generate = function*(ch, ctrl) {
   var i = 2;
@@ -29,23 +29,23 @@ var sieve = function*() {
   var n, ch, ctrl, prime, ch1;
 
   n    = parseInt(process.argv[2] || "50");
-  ch   = csp.chan();
-  ctrl = csp.chan();
+  ch   = cc.chan();
+  ctrl = cc.chan();
 
   console.log("The first " + n + " prime numbers:");
 
-  csp.go(generate, ch, ctrl);
+  cc.go(generate, ch, ctrl);
 
   for (var i = 0; i < n; i++) {
     prime = yield ch.take();
     console.log(prime);
     
-    ch1 = csp.chan();
-    csp.go(filter, ch, ch1, prime);
+    ch1 = cc.chan();
+    cc.go(filter, ch, ch1, prime);
     ch = ch1;
   }
 
   ctrl.close();
 };
 
-csp.go(sieve);
+cc.go(sieve);

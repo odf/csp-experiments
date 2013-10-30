@@ -1,12 +1,12 @@
-var csp = require('../csp');
+var cc = require('../core');
 
 var merge = function(inchs) {
-  var outch = csp.chan();
+  var outch = cc.chan();
   var active = inchs.slice();
 
-  csp.go(function*() {
+  cc.go(function*() {
     while (active.length > 0) {
-      var res = yield csp.select(active);
+      var res = yield cc.select(active);
       if (res.value == null) {
         if (!active[res.index].more()) {
           active.splice(res.index, 1);
@@ -23,9 +23,9 @@ var merge = function(inchs) {
 };
 
 var zip = function(inchs) {
-  var outch = csp.chan();
+  var outch = cc.chan();
 
-  csp.go(function*() {
+  cc.go(function*() {
     var results, active, indices, i, res;
 
     results = new Array(inchs.length);
@@ -37,7 +37,7 @@ var zip = function(inchs) {
         indices.push(i);
 
       while (active.length > 0) {
-        res = yield csp.select(active);
+        res = yield cc.select(active);
         i = res.index;
 
         if (res.value == null && !active[i].more()) {
@@ -64,7 +64,7 @@ var print = function*(ch) {
 }
 
 var timeout = function(milliseconds) {
-  var ch = csp.chan(0);
+  var ch = cc.chan(0);
   var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
   return ch;
 };
@@ -81,12 +81,12 @@ var f = function*(ch, x) {
 var chans = [];
 
 for (var i = 0; i < 3; ++i) {
-  var ch = csp.chan();
+  var ch = cc.chan();
   chans.push(ch);
-  csp.go(f, ch, i / 10);
+  cc.go(f, ch, i / 10);
 }
 
 if (process.argv[2] == 'b')
-  csp.go(print, zip(chans));
+  cc.go(print, zip(chans));
 else
-  csp.go(print, merge(chans));
+  cc.go(print, merge(chans));

@@ -1,11 +1,11 @@
-var csp = require('../csp');
-var cspn = require('../node');
+var cc = require('../core');
+var cn = require('../node');
 
-csp.go(function* () {
+cc.go(function* () {
   var ch, val;
 
   process.stdin.setEncoding('utf8');
-  ch = cspn.fromStream(process.stdin);
+  ch = cn.fromStream(process.stdin);
 
   while (ch.more()) {
     val = yield ch.take();
