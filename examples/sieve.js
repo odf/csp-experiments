@@ -2,7 +2,7 @@
 //
 // Added an explicit control channel to shut down the chain of "goroutines".
 
-var csp = require("../src/csp");
+var csp = require("../csp");
 
 var generate = function*(ch, ctrl) {
   var i = 2;

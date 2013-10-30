@@ -1,5 +1,5 @@
-var csp = require('../src/csp');
-var cspn = require('../src/node');
+var csp = require('../csp');
+var cspn = require('../node');
 
 csp.go(function* () {
   var ch, val;

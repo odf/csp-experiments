@@ -1,4 +1,4 @@
-var csp = require('../src/csp');
+var csp = require('../csp');
 
 var N = 3;
 
