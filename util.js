@@ -1,6 +1,24 @@
-var cc = require('../core');
+var cc = require('./core');
 
-var merge = function(inchs) {
+exports.each = function(fn, ch) {
+  var done = cc.chan(0);
+
+  cc.go(function*() {
+    while(ch.more())
+      fn(yield ch.take());
+    done.close();
+  });
+
+  return done;
+};
+
+exports.timeout = function(milliseconds) {
+  var ch = cc.chan(0);
+  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
+  return ch;
+};
+
+exports.merge = function(inchs) {
   var outch = cc.chan();
   var active = inchs.slice();
 
@@ -22,7 +40,7 @@ var merge = function(inchs) {
   return outch;
 };
 
-var zip = function(inchs) {
+exports.zip = function(inchs) {
   var outch = cc.chan();
 
   cc.go(function*() {
@@ -56,37 +74,3 @@ var zip = function(inchs) {
 
   return outch;
 };
-
-
-var print = function*(ch) {
-  while(ch.more())
-    console.log(yield ch.take());
-}
-
-var timeout = function(milliseconds) {
-  var ch = cc.chan(0);
-  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
-  return ch;
-};
-
-
-var f = function*(ch, x) {
-  for (var i = 0; i < 20; ++i) {
-    yield timeout(Math.random() * 100).take();
-    yield ch.put(i + x);
-  }
-  ch.close();
-};
-
-var chans = [];
-
-for (var i = 0; i < 3; ++i) {
-  var ch = cc.chan();
-  chans.push(ch);
-  cc.go(f, ch, i / 10);
-}
-
-if (process.argv[2] == 'b')
-  cc.go(print, zip(chans));
-else
-  cc.go(print, merge(chans));
