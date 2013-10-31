@@ -4,8 +4,13 @@ exports.each = function(fn, ch) {
   var done = cc.chan(0);
 
   cc.go(function*() {
-    while(ch.more())
-      fn(yield ch.take());
+    var val;
+    while(true) {
+      val = yield ch.take();
+      if (val === null && !ch.more())
+        break;
+      fn(val);
+    }
     done.close();
   });
 
