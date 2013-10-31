@@ -3,6 +3,7 @@
 // Added an explicit control channel to shut down the chain of "goroutines".
 
 var cc = require("../core");
+var cu = require("../util");
 
 var generate = function*(ch, ctrl) {
   var i = 2;
@@ -15,14 +16,10 @@ var generate = function*(ch, ctrl) {
   ch.close();
 };
 
-var filter = function*(inch, outch, prime) {
-  while (inch.more()) {
-    var i = yield inch.take();
-    if (i % prime != 0)
-      yield outch.put(i);
-  }
-
-  outch.close();
+var test = function(prime) {
+  return function(i) {
+    return i % prime != 0;
+  };
 };
 
 var sieve = function*() {
@@ -39,10 +36,7 @@ var sieve = function*() {
   for (var i = 0; i < n; i++) {
     prime = yield ch.take();
     console.log(prime);
-    
-    ch1 = cc.chan();
-    cc.go(filter, ch, ch1, prime);
-    ch = ch1;
+    ch = cu.filter(test(prime), ch);
   }
 
   ctrl.close();

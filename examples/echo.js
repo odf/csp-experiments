@@ -1,15 +1,8 @@
 var cc = require('../core');
 var cn = require('../node');
+var cu = require('../util');
 
 cc.go(function* () {
-  var ch, val;
-
   process.stdin.setEncoding('utf8');
-  ch = cn.fromStream(process.stdin);
-
-  while (ch.more()) {
-    val = yield ch.take();
-    if (val !== null)
-      console.log(val);
-  }
+  cu.each(console.log, cn.fromStream(process.stdin));
 });

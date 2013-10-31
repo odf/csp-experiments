@@ -1,6 +1,12 @@
 var cc = require('./core');
 
-exports.each = function(fn, ch) {
+exports.timeout = function(milliseconds) {
+  var ch = cc.chan(0);
+  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
+  return ch;
+};
+
+var each = exports.each = function(fn, ch) {
   var done = cc.chan(0);
 
   cc.go(function*() {
@@ -17,10 +23,22 @@ exports.each = function(fn, ch) {
   return done;
 };
 
-exports.timeout = function(milliseconds) {
-  var ch = cc.chan(0);
-  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
-  return ch;
+exports.filter = function(pred, ch) {
+  var outch = cc.chan();
+
+  cc.go(function*() {
+    var val;
+    while(true) {
+      val = yield ch.take();
+      if (val === null && !ch.more())
+        break;
+      if (pred(val))
+        yield outch.put(val);
+    }
+    outch.close();
+  });
+
+  return outch;
 };
 
 exports.merge = function(inchs) {
