@@ -27,26 +27,26 @@ function Buffer(size) {
   this.contents = [];
 }
 
-Buffer.prototype.count = function() {
-  return this.contents.length;
+Buffer.prototype.canPull = function() {
+  return this.contents.length > 0;
 }
 
-Buffer.prototype.isFull = function() {
-  return this.contents.length >= this.size;
+Buffer.prototype.canPush = function() {
+  return this.contents.length < this.size;
 }
 
-Buffer.prototype.add = function(val) {
-  if (this.isFull())
-    throw new Error("attempt to write to full buffer");
-  else
+Buffer.prototype.push = function(val) {
+  if (this.canPush)
     this.contents.unshift(val);
+  else
+    throw new Error("attempt to write to full buffer");
 }
 
-Buffer.prototype.remove = function() {
-  if (this.count() == 0)
-    throw new Error("attempt to read from empty buffer");
-  else
+Buffer.prototype.pull = function() {
+  if (this.canPull)
     return this.contents.pop();
+  else
+    throw new Error("attempt to read from empty buffer");
 }
 
 
@@ -57,21 +57,21 @@ function Chan(size) {
 
 Chan.prototype.put = function(val) {
   return function() {
-    if (this.isClosed)
+    if (this.isClosed) {
       return { state: "continue" };
-    else if (this.buffer.isFull())
+    } else if (this.buffer.canPush()) {
+      this.buffer.push(val);
+      return { state: "continue" };
+    } else {
       return { state: "park" };
-    else {
-      this.buffer.add(val);
-      return { state: "continue" };
     }
   }.bind(this);
 }
 
 Chan.prototype.take = function() {
   return function() {
-    if (this.buffer.count() > 0)
-      return { state: "continue", value: this.buffer.remove() };
+    if (this.buffer.canPull())
+      return { state: "continue", value: this.buffer.pull() };
     else if (this.isClosed)
       return { state: "continue", value: null };
     else
@@ -84,7 +84,7 @@ Chan.prototype.close = function() {
 }
 
 Chan.prototype.more = function() {
-  return !this.isClosed || this.buffer.count() > 0;
+  return !this.isClosed || this.buffer.canPull();
 }
 
 exports.chan = function(size) {
