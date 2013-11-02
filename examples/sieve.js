@@ -3,20 +3,9 @@
 var cc = require("../core");
 var cu = require("../util");
 
-var source = function(ctrl) {
-  var ch = cc.chan();
-
-  cc.go(function*() {
-    var i;
-    for (i = 2; ; i += 1) {
-      if (!ctrl.more())
-        break;
-      yield ch.put(i);
-    }
-    ch.close();
-  });
-
-  return ch;
+var infiniteRange = function*(start) {
+  for (var i = start; ; i += 1)
+    yield i;
 };
 
 var test = function(prime) {
@@ -27,7 +16,7 @@ var test = function(prime) {
 
 var sieve = function*(n) {
   var ctrl = cc.chan();
-  var ch = source(ctrl);
+  var ch   = cu.source(infiniteRange(2), ctrl);
   var prime;
 
   console.log("The first " + n + " prime numbers:");

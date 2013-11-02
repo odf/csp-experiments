@@ -6,6 +6,21 @@ exports.timeout = function(milliseconds) {
   return ch;
 };
 
+exports.source = function(gen, ctrl) {
+  var ch = cc.chan();
+
+  cc.go(function*() {
+    for (x of gen) {
+      if (ctrl !== undefined && !ctrl.more())
+        break;
+      yield ch.put(x);
+    }
+    ch.close();
+  });
+
+  return ch;
+};
+
 var each = exports.each = function(fn, ch) {
   var done = cc.chan(0);
 
