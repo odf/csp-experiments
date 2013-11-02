@@ -21,7 +21,7 @@ exports.source = function(gen, ctrl) {
   return ch;
 };
 
-var each = exports.each = function(fn, ch) {
+exports.each = function(fn, ch) {
   var done = cc.chan(0);
 
   cc.go(function*() {
