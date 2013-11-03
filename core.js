@@ -81,12 +81,21 @@ Buffer.prototype.tryToPull = function() {
 }
 
 
+var nullBuffer = {
+  isEmpty  : function() { return true; },
+  tryToPush: function() { return false; },
+  tryToPull: function() { return []; }
+};
+
+
 function Chan(arg) {
   if (arg == undefined)
     this.buffer = new Unbuffer();
   else if (typeof arg == "object")
     this.buffer = arg
-  else 
+  else if (arg === 0)
+    this.buffer = nullBuffer;
+  else
     this.buffer = new Buffer(arg || 1);
   this.isClosed = false;
 }

@@ -15,7 +15,7 @@ var test = function(prime) {
 };
 
 var sieve = function*(n) {
-  var ctrl = cc.chan();
+  var ctrl = cc.chan(0);
   var ch   = cu.source(infiniteRange(2), ctrl);
   var prime;
 
