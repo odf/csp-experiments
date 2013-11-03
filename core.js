@@ -23,8 +23,7 @@ exports.go = function(machine) {
 
 
 function Unbuffer() {
-  this.mayPush = false;
-  this.mayPull = false;
+  this.pullPending = false;
   this.hasValue = false;
   this.value = null;
 }
@@ -34,10 +33,8 @@ Unbuffer.prototype.isEmpty = function() {
 }
 
 Unbuffer.prototype.tryToPush = function(val) {
-  this.mayPull = true;
-
-  if (this.mayPush) {
-    this.mayPush = false;
+  if (this.pullPending) {
+    this.pullPending = false;
     this.hasValue = true;
     this.value = val;
     return true;
@@ -47,13 +44,12 @@ Unbuffer.prototype.tryToPush = function(val) {
 }
 
 Unbuffer.prototype.tryToPull = function() {
-  if (this.mayPull && this.hasValue) {
-    this.mayPull = false;
-    this.mayPush = false;
+  if (this.hasValue) {
+    this.pullPending = false;
     this.hasValue = false;
     return [this.value];
   } else {
-    this.mayPush = true;
+    this.pullPending = true;
     return [];
   }
 }
