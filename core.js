@@ -34,13 +34,14 @@ Unbuffer.prototype.isEmpty = function() {
 }
 
 Unbuffer.prototype.tryToPush = function(val) {
+  this.mayPull = true;
+
   if (this.mayPush) {
     this.mayPush = false;
     this.hasValue = true;
     this.value = val;
     return true;
   } else {
-    this.mayPull = true;
     return false;
   }
 }
@@ -48,6 +49,7 @@ Unbuffer.prototype.tryToPush = function(val) {
 Unbuffer.prototype.tryToPull = function() {
   if (this.mayPull && this.hasValue) {
     this.mayPull = false;
+    this.mayPush = false;
     this.hasValue = false;
     return [this.value];
   } else {
@@ -85,7 +87,7 @@ Buffer.prototype.tryToPull = function() {
 
 function Chan(arg) {
   if (arg == undefined)
-    this.buffer = new Buffer(1);
+    this.buffer = new Unbuffer();
   else if (typeof arg == "object")
     this.buffer = arg
   else 
