@@ -5,8 +5,8 @@ var source = function(x) {
   var ch = cc.chan();
   cc.go(function*() {
     for (var i = 0; i < 20; ++i) {
-      yield cu.timeout(Math.random() * 100).take();
-      yield ch.put(i + x);
+      yield cu.timeout(Math.random() * 100).pull();
+      yield ch.push(i + x);
     }
     ch.close();
   });
@@ -23,7 +23,7 @@ var makeChannels = function() {
 
 cc.go(function*() {
   var done = cu.each(console.log, cu.zip(makeChannels()));
-  yield done.take();
+  yield done.pull();
   console.log();
   cu.each(console.log, cu.merge(makeChannels()));
 });

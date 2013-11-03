@@ -22,7 +22,7 @@ var sieve = function*(n) {
   console.log("The first " + n + " prime numbers:");
 
   for (var i = 0; i < n; i++) {
-    prime = yield ch.take();
+    prime = yield ch.pull();
     console.log(prime);
     ch = cu.filter(test(prime), ch);
   }

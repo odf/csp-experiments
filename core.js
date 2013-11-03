@@ -100,7 +100,7 @@ function Chan(arg) {
   this.isClosed = false;
 }
 
-Chan.prototype.put = function(val) {
+Chan.prototype.push = function(val) {
   return function() {
     if (this.isClosed || this.buffer.tryToPush(val))
       return { state: "continue" };
@@ -109,7 +109,7 @@ Chan.prototype.put = function(val) {
   }.bind(this);
 }
 
-Chan.prototype.take = function() {
+Chan.prototype.pull = function() {
   return function() {
     var res = this.buffer.tryToPull();
     if (res.length > 0)
@@ -137,7 +137,7 @@ exports.chan = function(size) {
 exports.select = function(channels, default_value) {
   return function() {
     for (var i = 0; i < channels.length; ++i) {
-      var res = channels[i].take()();
+      var res = channels[i].pull()();
       if (res.state == "continue") {
         return { state: "continue",
                  value: { index:   i,
@@ -162,7 +162,7 @@ exports.wrapValue = function(val) {
 
 exports.unwrap = function(ch) {
   return function() {
-    var res = ch.take()();
+    var res = ch.pull()();
     return (res.state == "continue") ? res.value : res;
   }
 }

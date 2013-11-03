@@ -3,7 +3,7 @@ var cc = require('./core');
 var callback = function(ch) {
   return function(err, val) {
     cc.go(function*() {
-      yield ch.put(err ? cc.wrapError(new Error(err)) : cc.wrapValue(val));
+      yield ch.push(err ? cc.wrapError(new Error(err)) : cc.wrapValue(val));
     });
   }
 };
@@ -30,7 +30,7 @@ exports.fromStream = function(stream)
 
   stream.on('data', function(chunk) {
     cc.go(function*() {
-      yield ch.put(chunk);
+      yield ch.push(chunk);
     });
   });
 
