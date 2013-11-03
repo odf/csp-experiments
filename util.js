@@ -11,7 +11,7 @@ exports.source = function(gen, ctrl) {
 
   cc.go(function*() {
     for (x of gen) {
-      if (ctrl !== undefined && !ctrl.more())
+      if (ctrl && (yield cc.select([ctrl], null)))
         break;
       yield ch.push(x);
     }
@@ -26,7 +26,7 @@ exports.each = function(fn, ch) {
 
   cc.go(function*() {
     var val;
-    while((val = yield ch.pull()) !== null || ch.more())
+    while((val = yield ch.pull()) !== undefined)
       fn(val);
     done.close();
   });
@@ -39,7 +39,7 @@ exports.map = function(fn, ch) {
 
   cc.go(function*() {
     var val;
-    while((val = yield ch.pull()) !== null || ch.more())
+    while((val = yield ch.pull()) !== undefined)
       yield outch.push(fn(val));
     outch.close();
   });
@@ -52,7 +52,7 @@ exports.filter = function(pred, ch) {
 
   cc.go(function*() {
     var val;
-    while((val = yield ch.pull()) !== null || ch.more())
+    while((val = yield ch.pull()) !== undefined)
       if (pred(val))
         yield outch.push(val);
     outch.close();
@@ -68,13 +68,10 @@ exports.merge = function(inchs) {
   cc.go(function*() {
     while (active.length > 0) {
       var res = yield cc.select(active);
-      if (res.value == null) {
-        if (!active[res.index].more()) {
-          active.splice(res.index, 1);
-        }
-      } else {
+      if (res.value === undefined)
+        active.splice(res.index, 1);
+      else
         yield outch.push(res.value);
-      }
     }
 
     outch.close();
@@ -99,13 +96,13 @@ exports.zip = function(inchs) {
 
       while (active.length > 0) {
         res = yield cc.select(active);
-        i = res.index;
 
-        if (res.value == null && !active[i].more()) {
+        if (res.value === undefined) {
           outch.close();
           return;
         }
 
+        i = res.index;
         results[indices[i]] = res.value;
         active.splice(i, 1);
         indices.splice(i, 1);

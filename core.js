@@ -102,7 +102,9 @@ function Chan(arg) {
 
 Chan.prototype.push = function(val) {
   return function() {
-    if (this.isClosed || this.buffer.tryToPush(val))
+    if (val === undefined)
+      return { state: "error", value: new Error("push() requires an argument") };
+    else if (this.isClosed || this.buffer.tryToPush(val))
       return { state: "continue" };
     else
       return { state: "park" };
@@ -115,7 +117,7 @@ Chan.prototype.pull = function() {
     if (res.length > 0)
       return { state: "continue", value: res[0] };
     else if (this.isClosed)
-      return { state: "continue", value: null };
+      return { state: "continue" };
     else
       return { state: "park" };
   }.bind(this);
@@ -123,10 +125,6 @@ Chan.prototype.pull = function() {
 
 Chan.prototype.close = function() {
   this.isClosed = true;
-}
-
-Chan.prototype.more = function() {
-  return !(this.isClosed && this.buffer.isEmpty());
 }
 
 exports.chan = function(size) {
