@@ -68,6 +68,24 @@ exports.filter = function(pred, ch, closeInput) {
   return outch;
 };
 
+exports.take = function(n, ch, closeInput) {
+  var outch = cc.chan();
+
+  cc.go(function*() {
+    var val, i;
+    for (i = 0; i < n; ++i) {
+      val = yield ch.pull();
+      if (val === undefined || !(yield outch.push(val)))
+        break;
+    }
+    if (closeInput)
+      ch.close();
+    outch.close();
+  });
+
+  return outch;
+};
+
 exports.merge = function(inchs, closeInputs) {
   var outch = cc.chan();
   var active = inchs.slice();
@@ -83,7 +101,7 @@ exports.merge = function(inchs, closeInputs) {
     }
 
     if (closeInputs)
-      for (ch of active)
+      for (ch of active.values())
         ch.close();
     outch.close();
   });
@@ -123,7 +141,7 @@ exports.zip = function(inchs, closeInputs) {
         break;
     }
     if (closeInputs)
-      for (ch of inchs)
+      for (ch of inchs.values())
         ch.close();
     outch.close();
   });

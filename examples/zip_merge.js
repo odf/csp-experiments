@@ -25,5 +25,5 @@ cc.go(function*() {
   var done = cu.each(console.log, cu.zip(makeChannels()));
   yield done.pull();
   console.log();
-  cu.each(console.log, cu.merge(makeChannels()));
+  cu.each(console.log, cu.take(30, cu.merge(makeChannels(), true ), true));
 });
