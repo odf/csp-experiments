@@ -22,6 +22,44 @@ exports.go = function(machine) {
 }
 
 
+function Unbuffer() {
+  this.mayPush = false;
+  this.mayPull = false;
+  this.hasValue = false;
+  this.value = null;
+}
+
+Unbuffer.prototype.canPull = function() {
+  this.mayPush = true;
+  return this.mayPull && this.hasValue;
+}
+
+Unbuffer.prototype.canPush = function() {
+  this.mayPull = true;
+  return this.mayPush;
+}
+
+Unbuffer.prototype.push = function(val) {
+  if (this.canPush) {
+    this.mayPush = false;
+    this.hasValue = true;
+    this.value = val;
+  } else {
+    throw new Error("attempt to write to full buffer");
+  }
+}
+
+Unbuffer.prototype.pull = function() {
+  if (this.canPull) {
+    this.mayPull = false;
+    this.hasValue = false;
+    return this.value;
+  } else {
+    throw new Error("attempt to read from empty buffer");
+  }
+}
+
+
 function Buffer(size) {
   this.size = size || 1;
   this.contents = [];
@@ -50,8 +88,13 @@ Buffer.prototype.pull = function() {
 }
 
 
-function Chan(size) {
-  this.buffer = new Buffer(size || 1);
+function Chan(arg) {
+  if (arg == undefined)
+    this.buffer = new Unbuffer();
+  else if (typeof arg == "object")
+    this.buffer = arg
+  else 
+    this.buffer = new Buffer(arg || 1);
   this.isClosed = false;
 }
 
