@@ -15,8 +15,7 @@ var test = function(prime) {
 };
 
 var sieve = function*(n) {
-  var ctrl = cc.chan(0);
-  var ch   = cu.source(infiniteRange(2), ctrl);
+  var ch  = cu.source(infiniteRange(2));
   var prime;
 
   console.log("The first " + n + " prime numbers:");
@@ -24,10 +23,9 @@ var sieve = function*(n) {
   for (var i = 0; i < n; i++) {
     prime = yield ch.pull();
     console.log(prime);
-    ch = cu.filter(test(prime), ch);
+    ch = cu.filter(test(prime), ch, true);
   }
-
-  ctrl.close();
+  ch.close();
 };
 
 cc.go(sieve, parseInt(process.argv[2] || "50"));

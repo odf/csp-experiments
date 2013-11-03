@@ -13,7 +13,8 @@ exports.source = function(gen, ctrl) {
     for (x of gen) {
       if (ctrl && (yield cc.select([ctrl], null)))
         break;
-      yield ch.push(x);
+      if (!(yield ch.push(x)))
+        break;
     }
     ch.close();
   });
@@ -34,34 +35,40 @@ exports.each = function(fn, ch) {
   return done;
 };
 
-exports.map = function(fn, ch) {
+exports.map = function(fn, ch, closeInput) {
   var outch = cc.chan();
 
   cc.go(function*() {
     var val;
     while((val = yield ch.pull()) !== undefined)
-      yield outch.push(fn(val));
+      if (!(yield outch.push(fn(val))))
+        break;
+    if (closeInput)
+      ch.close();
     outch.close();
   });
 
   return outch;
 };
 
-exports.filter = function(pred, ch) {
+exports.filter = function(pred, ch, closeInput) {
   var outch = cc.chan();
 
   cc.go(function*() {
     var val;
     while((val = yield ch.pull()) !== undefined)
       if (pred(val))
-        yield outch.push(val);
+        if (!(yield outch.push(val)))
+          break;
+    if (closeInput)
+      ch.close();
     outch.close();
   });
 
   return outch;
 };
 
-exports.merge = function(inchs) {
+exports.merge = function(inchs, closeInputs) {
   var outch = cc.chan();
   var active = inchs.slice();
 
@@ -71,16 +78,20 @@ exports.merge = function(inchs) {
       if (res.value === undefined)
         active.splice(res.index, 1);
       else
-        yield outch.push(res.value);
+        if (!(yield outch.push(res.value)))
+          break;
     }
 
+    if (closeInputs)
+      for (ch of active)
+        ch.close();
     outch.close();
   });
 
   return outch;
 };
 
-exports.zip = function(inchs) {
+exports.zip = function(inchs, closeInputs) {
   var outch = cc.chan();
 
   cc.go(function*() {
@@ -99,7 +110,7 @@ exports.zip = function(inchs) {
 
         if (res.value === undefined) {
           outch.close();
-          return;
+          break;
         }
 
         i = res.index;
@@ -108,8 +119,13 @@ exports.zip = function(inchs) {
         indices.splice(i, 1);
       }
 
-      yield outch.push(results);
+      if (!(yield outch.push(results)))
+        break;
     }
+    if (closeInputs)
+      for (ch of inchs)
+        ch.close();
+    outch.close();
   });
 
   return outch;

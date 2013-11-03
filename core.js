@@ -104,8 +104,10 @@ Chan.prototype.push = function(val) {
   return function() {
     if (val === undefined)
       return { state: "error", value: new Error("push() requires an argument") };
-    else if (this.isClosed || this.buffer.tryToPush(val))
-      return { state: "continue" };
+    else if (this.isClosed)
+      return { state: "continue", value: false };
+    else if(this.buffer.tryToPush(val))
+      return { state: "continue", value: true };
     else
       return { state: "park" };
   }.bind(this);
