@@ -26,12 +26,8 @@ exports.each = function(fn, ch) {
 
   cc.go(function*() {
     var val;
-    while(true) {
-      val = yield ch.pull();
-      if (val === null && !ch.more())
-        break;
+    while((val = yield ch.pull()) !== null || ch.more())
       fn(val);
-    }
     done.close();
   });
 
@@ -43,12 +39,8 @@ exports.map = function(fn, ch) {
 
   cc.go(function*() {
     var val;
-    while(true) {
-      val = yield ch.pull();
-      if (val === null && !ch.more())
-        break;
+    while((val = yield ch.pull()) !== null || ch.more())
       yield outch.push(fn(val));
-    }
     outch.close();
   });
 
@@ -60,13 +52,9 @@ exports.filter = function(pred, ch) {
 
   cc.go(function*() {
     var val;
-    while(true) {
-      val = yield ch.pull();
-      if (val === null && !ch.more())
-        break;
+    while((val = yield ch.pull()) !== null || ch.more())
       if (pred(val))
         yield outch.push(val);
-    }
     outch.close();
   });
 
