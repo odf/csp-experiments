@@ -38,6 +38,23 @@ exports.each = function(fn, ch) {
   return done;
 };
 
+exports.map = function(fn, ch) {
+  var outch = cc.chan();
+
+  cc.go(function*() {
+    var val;
+    while(true) {
+      val = yield ch.pull();
+      if (val === null && !ch.more())
+        break;
+      yield outch.push(fn(val));
+    }
+    outch.close();
+  });
+
+  return outch;
+};
+
 exports.filter = function(pred, ch) {
   var outch = cc.chan();
 
