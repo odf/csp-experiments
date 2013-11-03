@@ -29,33 +29,30 @@ function Unbuffer() {
   this.value = null;
 }
 
-Unbuffer.prototype.canPull = function() {
-  this.mayPush = true;
-  return this.mayPull && this.hasValue;
+Unbuffer.prototype.isEmpty = function() {
+  return !this.hasValue;
 }
 
-Unbuffer.prototype.canPush = function() {
-  this.mayPull = true;
-  return this.mayPush;
-}
-
-Unbuffer.prototype.push = function(val) {
-  if (this.canPush) {
+Unbuffer.prototype.tryToPush = function(val) {
+  if (this.mayPush) {
     this.mayPush = false;
     this.hasValue = true;
     this.value = val;
+    return true;
   } else {
-    throw new Error("attempt to write to full buffer");
+    this.mayPull = true;
+    return false;
   }
 }
 
-Unbuffer.prototype.pull = function() {
-  if (this.canPull) {
+Unbuffer.prototype.tryToPull = function() {
+  if (this.mayPull && this.hasValue) {
     this.mayPull = false;
     this.hasValue = false;
-    return this.value;
+    return [this.value];
   } else {
-    throw new Error("attempt to read from empty buffer");
+    this.mayPush = true;
+    return [];
   }
 }
 
@@ -65,32 +62,30 @@ function Buffer(size) {
   this.contents = [];
 }
 
-Buffer.prototype.canPull = function() {
-  return this.contents.length > 0;
+Buffer.prototype.isEmpty = function() {
+  return this.contents.length == 0;
 }
 
-Buffer.prototype.canPush = function() {
-  return this.contents.length < this.size;
-}
-
-Buffer.prototype.push = function(val) {
-  if (this.canPush)
+Buffer.prototype.tryToPush = function(val) {
+  if (this.contents.length < this.size) {
     this.contents.unshift(val);
-  else
-    throw new Error("attempt to write to full buffer");
+    return true;
+  } else {
+    return false;
+  }
 }
 
-Buffer.prototype.pull = function() {
-  if (this.canPull)
-    return this.contents.pop();
+Buffer.prototype.tryToPull = function() {
+  if (this.contents.length > 0)
+    return [this.contents.pop()];
   else
-    throw new Error("attempt to read from empty buffer");
+    return [];
 }
 
 
 function Chan(arg) {
   if (arg == undefined)
-    this.buffer = new Unbuffer();
+    this.buffer = new Buffer(1);
   else if (typeof arg == "object")
     this.buffer = arg
   else 
@@ -100,21 +95,18 @@ function Chan(arg) {
 
 Chan.prototype.put = function(val) {
   return function() {
-    if (this.isClosed) {
+    if (this.isClosed || this.buffer.tryToPush(val))
       return { state: "continue" };
-    } else if (this.buffer.canPush()) {
-      this.buffer.push(val);
-      return { state: "continue" };
-    } else {
+    else
       return { state: "park" };
-    }
   }.bind(this);
 }
 
 Chan.prototype.take = function() {
   return function() {
-    if (this.buffer.canPull())
-      return { state: "continue", value: this.buffer.pull() };
+    var res = this.buffer.tryToPull();
+    if (res.length > 0)
+      return { state: "continue", value: res[0] };
     else if (this.isClosed)
       return { state: "continue", value: null };
     else
@@ -127,7 +119,7 @@ Chan.prototype.close = function() {
 }
 
 Chan.prototype.more = function() {
-  return !this.isClosed || this.buffer.canPull();
+  return !(this.isClosed && this.buffer.isEmpty());
 }
 
 exports.chan = function(size) {
