@@ -1,3 +1,5 @@
+'use strict'
+
 var go_ = function(machine, step) {
   while(!step.done) {
     var res = step.value();

@@ -1,5 +1,7 @@
 // Concurrent prime sieve, loosely based on http://golang.org/doc/play/sieve.go
 
+'use strict'
+
 var cc = require("../core");
 var cu = require("../util");
 

@@ -1,3 +1,5 @@
+'use strict'
+
 var fs = require('fs');
 var cc = require('../core');
 var cn = require('../node');

@@ -1,3 +1,5 @@
+'use strict'
+
 var cc = require('../core');
 var cu = require('../util');
 

@@ -1,3 +1,5 @@
+'use strict'
+
 var cc = require('./core');
 
 exports.timeout = function(milliseconds) {
@@ -10,10 +12,13 @@ exports.source = function(gen, ctrl) {
   var ch = cc.chan();
 
   cc.go(function*() {
-    for (x of gen) {
+    for (;;) {
       if (ctrl && (yield cc.select([ctrl], null)))
         break;
-      if (!(yield ch.push(x)))
+      var next = gen.next();
+      if (next.done)
+        break;
+      if (!(yield ch.push(next.value)))
         break;
     }
     ch.close();
