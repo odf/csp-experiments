@@ -6,9 +6,10 @@ var cu = require('../util');
 var source = function(x) {
   var ch = cc.chan();
   cc.go(function*() {
-    for (var i = 0; i < 20; ++i) {
+    for (var i = 0; ; ++i) {
       yield cu.timeout(Math.random() * 100).pull();
-      yield ch.push(i + x);
+      if (!(yield ch.push(i + x)))
+        break;
     }
     ch.close();
   });
@@ -24,8 +25,8 @@ var makeChannels = function() {
 };
 
 cc.go(function*() {
-  var done = cu.each(console.log, cu.zip(makeChannels()));
+  var done = cu.each(console.log, cu.take(20, cu.zip(makeChannels())));
   yield done.pull();
   console.log();
-  cu.each(console.log, cu.take(30, cu.merge(makeChannels(), true ), true));
+  cu.each(console.log, cu.take(30, cu.merge(makeChannels())));
 });

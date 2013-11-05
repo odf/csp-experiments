@@ -37,7 +37,7 @@ exports.each = function(fn, ch) {
   return done;
 };
 
-exports.map = function(fn, ch, closeInput) {
+exports.map = function(fn, ch, keepInputOpen) {
   var outch = cc.chan();
 
   cc.go(function*() {
@@ -45,7 +45,7 @@ exports.map = function(fn, ch, closeInput) {
     while((val = yield ch.pull()) !== undefined)
       if (!(yield outch.push(fn(val))))
         break;
-    if (closeInput)
+    if (!keepInputOpen)
       ch.close();
     outch.close();
   });
@@ -53,7 +53,7 @@ exports.map = function(fn, ch, closeInput) {
   return outch;
 };
 
-exports.filter = function(pred, ch, closeInput) {
+exports.filter = function(pred, ch, keepInputOpen) {
   var outch = cc.chan();
 
   cc.go(function*() {
@@ -62,7 +62,7 @@ exports.filter = function(pred, ch, closeInput) {
       if (pred(val))
         if (!(yield outch.push(val)))
           break;
-    if (closeInput)
+    if (!keepInputOpen)
       ch.close();
     outch.close();
   });
@@ -70,7 +70,7 @@ exports.filter = function(pred, ch, closeInput) {
   return outch;
 };
 
-exports.take = function(n, ch, closeInput) {
+exports.take = function(n, ch, keepInputOpen) {
   var outch = cc.chan();
 
   cc.go(function*() {
@@ -80,7 +80,7 @@ exports.take = function(n, ch, closeInput) {
       if (val === undefined || !(yield outch.push(val)))
         break;
     }
-    if (closeInput)
+    if (!keepInputOpen)
       ch.close();
     outch.close();
   });
@@ -88,7 +88,7 @@ exports.take = function(n, ch, closeInput) {
   return outch;
 };
 
-exports.merge = function(inchs, closeInputs) {
+exports.merge = function(inchs, keepInputsOpen) {
   var outch = cc.chan();
   var active = inchs.slice();
 
@@ -102,7 +102,7 @@ exports.merge = function(inchs, closeInputs) {
           break;
     }
 
-    if (closeInputs)
+    if (!keepInputsOpen)
       for (var ch of active.values())
         ch.close();
     outch.close();
@@ -111,7 +111,7 @@ exports.merge = function(inchs, closeInputs) {
   return outch;
 };
 
-exports.zip = function(inchs, closeInputs) {
+exports.zip = function(inchs, keepInputsOpen) {
   var outch = cc.chan();
 
   cc.go(function*() {
@@ -142,7 +142,7 @@ exports.zip = function(inchs, closeInputs) {
       if (!(yield outch.push(results)))
         break;
     }
-    if (closeInputs)
+    if (!keepInputsOpen)
       for (var ch of inchs.values())
         ch.close();
     outch.close();
