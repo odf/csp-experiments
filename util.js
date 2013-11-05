@@ -37,15 +37,15 @@ exports.each = function(fn, ch) {
   return done;
 };
 
-exports.map = function(fn, ch, keepInputOpen) {
+var wrapFilter = function(filter, args, ch, keepOpen)
+{
   var outch = cc.chan();
+  var done = cc.chan();
 
+  cc.go.apply(this, [filter].concat(args, ch, outch, done));
   cc.go(function*() {
-    var val;
-    while((val = yield ch.pull()) !== undefined)
-      if (!(yield outch.push(fn(val))))
-        break;
-    if (!keepInputOpen)
+    yield done.pull();
+    if (!keepOpen)
       ch.close();
     outch.close();
   });
@@ -53,21 +53,29 @@ exports.map = function(fn, ch, keepInputOpen) {
   return outch;
 };
 
+exports.mapRaw = function*(fn, inch, outch, done) {
+  var val;
+  while((val = yield inch.pull()) !== undefined)
+    if(!(yield outch.push(fn(val))))
+      break;
+  yield done.push(true);
+};
+
+exports.map = function(fn, ch, keepInputOpen) {
+  return wrapFilter(exports.mapRaw, [fn], ch, keepInputOpen);
+};
+
+exports.filterRaw = function*(pred, inch, outch, done) {
+  var val;
+  while((val = yield inch.pull()) !== undefined)
+    if (pred(val))
+      if (!(yield outch.push(val)))
+        break;
+  yield done.push(true);
+};
+
 exports.filter = function(pred, ch, keepInputOpen) {
-  var outch = cc.chan();
-
-  cc.go(function*() {
-    var val;
-    while((val = yield ch.pull()) !== undefined)
-      if (pred(val))
-        if (!(yield outch.push(val)))
-          break;
-    if (!keepInputOpen)
-      ch.close();
-    outch.close();
-  });
-
-  return outch;
+  return wrapFilter(exports.filterRaw, [pred], ch, keepInputOpen);
 };
 
 exports.take = function(n, ch, keepInputOpen) {
