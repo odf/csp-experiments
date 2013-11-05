@@ -12,13 +12,10 @@ exports.source = function(gen, ctrl) {
   var ch = cc.chan();
 
   cc.go(function*() {
-    for (;;) {
+    for (var x of gen) {
       if (ctrl && (yield cc.select([ctrl], null)))
         break;
-      var next = gen.next();
-      if (next.done)
-        break;
-      if (!(yield ch.push(next.value)))
+      if (!(yield ch.push(x)))
         break;
     }
     ch.close();
@@ -106,7 +103,7 @@ exports.merge = function(inchs, closeInputs) {
     }
 
     if (closeInputs)
-      for (ch of active.values())
+      for (var ch of active.values())
         ch.close();
     outch.close();
   });
@@ -146,7 +143,7 @@ exports.zip = function(inchs, closeInputs) {
         break;
     }
     if (closeInputs)
-      for (ch of inchs.values())
+      for (var ch of inchs.values())
         ch.close();
     outch.close();
   });
