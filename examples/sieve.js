@@ -25,7 +25,7 @@ var sieve = function*(n) {
   for (var i = 0; i < n; i++) {
     prime = yield ch.pull();
     console.log(prime);
-    ch = cu.filter(test(prime), ch, true);
+    ch = cu.filter(test(prime), ch);
   }
   ch.close();
 };
