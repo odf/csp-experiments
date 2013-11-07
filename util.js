@@ -177,3 +177,39 @@ raw.zip = function*(inchs, outch, done) {
 exports.zip = function(inchs, keepInputsOpen) {
   return wrap(raw.zip, [], inchs, keepInputsOpen);
 };
+
+raw.scatter = function*(preds, inch, outchs, done) {
+  preds = preds.slice();
+  outchs = outchs.slice();
+
+  var val;
+  while(preds.length > 0 && (val = yield inch.pull()) !== undefined) {
+    for (var i = 0; i < preds.length; ++i) {
+      if ((preds[i] == true) || preds[i](val)) {
+        if (!(yield outchs[i].push(val))) {
+          preds.splice(i, 1);
+          outchs.splice(i, 1);
+        }
+        break;
+      }
+    }
+  }
+  yield done.push(true);
+};
+
+exports.scatter = function(preds, inch, keepInputOpen) {
+  var outchs = preds.map(function () { return cc.chan(); });
+  var done = cc.chan();
+  var ch;
+
+  cc.go(raw.scatter, preds, inch, outchs, done);
+  cc.go(function*() {
+    yield done.pull();
+    if (!keepInputOpen)
+      inch.close();
+    for (var ch of outchs.values())
+      ch.close();
+  });
+
+  return outchs;
+}
