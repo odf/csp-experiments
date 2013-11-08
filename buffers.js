@@ -46,3 +46,9 @@ SlidingBuffer.prototype.tryToPull = function() {
   else
     return [];
 };
+
+
+module.exports = {
+  DroppingBuffer: DroppingBuffer,
+  SlidingBuffer: SlidingBuffer
+};
