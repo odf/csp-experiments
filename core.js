@@ -13,6 +13,9 @@ var go_ = function(machine, step) {
     case "continue":
       step = machine.next(res.value);
       break;
+    case "pass":
+      setTimeout(function() { go_(machine, machine.next()); }, res.value);
+      return;
     }
   }
 }
@@ -135,6 +138,12 @@ exports.chan = function(size) {
   return new Chan(size);
 }
 
+
+exports.pass = function(milliseconds) {
+  return function() {
+    return { state: "pass", value: milliseconds || 0 };
+  };
+};
 
 exports.select = function(channels, default_value) {
   return function() {

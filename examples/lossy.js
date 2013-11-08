@@ -9,6 +9,8 @@ cc.go(function*() {
   for (var i = 1; ; ++i) {
     if (!(yield ch.push(i)))
       break;
+    if (i % 10 == 0)
+      yield cc.pass();
   }
   ch.close();
 });

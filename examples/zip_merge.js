@@ -7,8 +7,8 @@ var source = function(x) {
   var ch = cc.chan();
   cc.go(function*() {
     for (var i = 0; ; ++i) {
-      yield cu.timeout(Math.random() * 100).pull();
-      if (!(yield ch.push(i + x)))
+      yield cc.pass(Math.random() * 100);
+      if (!(yield ch.push("" + x + "." + i)))
         break;
     }
     ch.close();
@@ -19,8 +19,8 @@ var source = function(x) {
 
 var makeChannels = function() {
   var chans = [];
-  for (var i = 0; i < 3; ++i)
-    chans.push(source(i / 10));
+  for (var i of 'abc'.split('').values())
+    chans.push(source(i));
   return chans;
 };
 

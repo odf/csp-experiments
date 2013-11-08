@@ -2,12 +2,6 @@
 
 var cc = require('./core');
 
-exports.timeout = function(milliseconds) {
-  var ch = cc.chan(0);
-  var t = setTimeout(function() { clearTimeout(t); ch.close(); }, milliseconds);
-  return ch;
-};
-
 exports.source = function(gen, ctrl) {
   var ch = cc.chan();
 
