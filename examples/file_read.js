@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 var fs = require('fs');
 var cc = require('../core');
@@ -9,4 +9,4 @@ cc.go(function* () {
   var options = { encoding: 'utf8' };
 
   console.log(yield cn.call(fs.readFile, fs, path, options));
-})
+});

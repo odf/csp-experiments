@@ -1,13 +1,11 @@
-'use strict'
+'use strict';
 
 var cc = require('../core');
 var cn = require('../node');
 var cu = require('../util');
 
 var quote = function(s) {
-  if (/\n$/.test(s))
-    s = s.slice(0, -1)
-  return "-- " + s + " --";
+  return "-- " + s.replace(/\n$/, '') + " --";
 };
 
 cc.go(function* () {

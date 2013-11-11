@@ -15,15 +15,15 @@ var preds = [
   function(n) { return n % 5 == 0 },
   true];
 
-var outchs = cu.scatter(preds, inch);
+var intermediates = cu.scatter(preds, inch);
 
-var fizzbuzz = cu.map(function() { return "fizzbuzz"; }, outchs[0]);
-var fizz     = cu.map(function() { return "fizz"; }, outchs[1]);
-var buzz     = cu.map(function() { return "buzz"; }, outchs[2]);
-var rest     = outchs[3];
+var fizzbuzz = cu.map(function() { return "fizzbuzz"; }, intermediates[0]);
+var fizz     = cu.map(function() { return "fizz"; }, intermediates[1]);
+var buzz     = cu.map(function() { return "buzz"; }, intermediates[2]);
+var rest     = intermediates[3];
 
 var outch = cu.merge([fizzbuzz, fizz, buzz, rest]);
 
-var n = parseInt(process.argv[2] || "50")
+var n = parseInt(process.argv[2] || "50");
 
 cu.each(console.log, cu.take(n, outch));
