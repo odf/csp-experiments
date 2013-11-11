@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 var go_ = function(machine, step) {
   while(!step.done) {
@@ -18,24 +18,24 @@ var go_ = function(machine, step) {
       return;
     }
   }
-}
+};
 
 exports.go = function(machine) {
   var args = Array.prototype.slice.call(arguments, 1);
   var gen = machine.apply(undefined, args);
   go_(gen, gen.next());
-}
+};
 
 
 function Unbuffer() {
   this.pullPending = false;
   this.hasValue = false;
   this.value = null;
-}
+};
 
-Unbuffer.prototype.isEmpty = function() {
-  return !this.hasValue;
-}
+Unbuffer.prototype.canFail = function() {
+  return true;
+};
 
 Unbuffer.prototype.tryToPush = function(val) {
   if (this.pullPending) {
@@ -46,7 +46,7 @@ Unbuffer.prototype.tryToPush = function(val) {
   } else {
     return false;
   }
-}
+};
 
 Unbuffer.prototype.tryToPull = function() {
   if (this.hasValue) {
@@ -57,17 +57,17 @@ Unbuffer.prototype.tryToPull = function() {
     this.pullPending = true;
     return [];
   }
-}
+};
 
 
 function Buffer(size) {
   this.size = size || 1;
   this.contents = [];
-}
+};
 
-Buffer.prototype.isEmpty = function() {
-  return this.contents.length == 0;
-}
+Buffer.prototype.canFail = function() {
+  return true;
+};
 
 Buffer.prototype.tryToPush = function(val) {
   if (this.contents.length < this.size) {
@@ -76,19 +76,19 @@ Buffer.prototype.tryToPush = function(val) {
   } else {
     return false;
   }
-}
+};
 
 Buffer.prototype.tryToPull = function() {
   if (this.contents.length > 0)
     return [this.contents.pop()];
   else
     return [];
-}
+};
 
 
 var nullBuffer = {
-  isEmpty  : function() { return true; },
-  tryToPush: function() { return false; },
+  canFail  : function() { return false; },
+  tryToPush: function() { return true; },
   tryToPull: function() { return []; }
 };
 
@@ -103,7 +103,7 @@ function Chan(arg) {
   else
     this.buffer = new Buffer(arg || 1);
   this.isClosed = false;
-}
+};
 
 Chan.prototype.push = function(val) {
   return function() {
@@ -116,7 +116,7 @@ Chan.prototype.push = function(val) {
     else
       return { state: "park" };
   }.bind(this);
-}
+};
 
 Chan.prototype.pull = function() {
   return function() {
@@ -128,15 +128,15 @@ Chan.prototype.pull = function() {
     else
       return { state: "park" };
   }.bind(this);
-}
+};
 
 Chan.prototype.close = function() {
   this.isClosed = true;
-}
+};
 
 exports.chan = function(size) {
   return new Chan(size);
-}
+};
 
 
 exports.pass = function(milliseconds) {
@@ -161,19 +161,19 @@ exports.select = function(channels, default_value) {
     else
       return { state: "continue", value: default_value };
   }
-}
+};
 
 exports.wrapError = function(err) {
   return { state: "error", value: err };
-}
+};
 
 exports.wrapValue = function(val) {
   return { state: "continue", value: val };
-}
+};
 
 exports.unwrap = function(ch) {
   return function() {
     var res = ch.pull()();
     return (res.state == "continue") ? res.value : res;
   }
-}
+};

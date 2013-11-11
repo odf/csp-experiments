@@ -5,8 +5,8 @@ function DroppingBuffer(size) {
   this.contents = [];
 };
 
-DroppingBuffer.prototype.isEmpty = function() {
-  return this.contents.length == 0;
+DroppingBuffer.prototype.canFail = function() {
+  return false;
 };
 
 DroppingBuffer.prototype.tryToPush = function(val) {
@@ -28,8 +28,8 @@ function SlidingBuffer(size) {
   this.contents = [];
 };
 
-SlidingBuffer.prototype.isEmpty = function() {
-  return this.contents.length == 0;
+SlidingBuffer.prototype.canFail = function() {
+  return false;
 };
 
 SlidingBuffer.prototype.tryToPush = function(val) {
