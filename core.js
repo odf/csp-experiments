@@ -1,5 +1,7 @@
 'use strict';
 
+var cb = require('./buffers');
+
 var go_ = function(machine, step) {
   while(!step.done) {
     var res = step.value();
@@ -20,88 +22,9 @@ var go_ = function(machine, step) {
   }
 };
 
-exports.go = function(machine) {
-  var args = Array.prototype.slice.call(arguments, 1);
-  var gen = machine.apply(undefined, args);
-  go_(gen, gen.next());
-};
 
-
-function Unbuffer() {
-  this.pullPending = false;
-  this.hasValue = false;
-  this.value = null;
-};
-
-Unbuffer.prototype.canFail = function() {
-  return true;
-};
-
-Unbuffer.prototype.tryToPush = function(val) {
-  if (this.pullPending) {
-    this.pullPending = false;
-    this.hasValue = true;
-    this.value = val;
-    return true;
-  } else {
-    return false;
-  }
-};
-
-Unbuffer.prototype.tryToPull = function() {
-  if (this.hasValue) {
-    this.pullPending = false;
-    this.hasValue = false;
-    return [this.value];
-  } else {
-    this.pullPending = true;
-    return [];
-  }
-};
-
-
-function Buffer(size) {
-  this.size = size || 1;
-  this.contents = [];
-};
-
-Buffer.prototype.canFail = function() {
-  return true;
-};
-
-Buffer.prototype.tryToPush = function(val) {
-  if (this.contents.length < this.size) {
-    this.contents.unshift(val);
-    return true;
-  } else {
-    return false;
-  }
-};
-
-Buffer.prototype.tryToPull = function() {
-  if (this.contents.length > 0)
-    return [this.contents.pop()];
-  else
-    return [];
-};
-
-
-var nullBuffer = {
-  canFail  : function() { return false; },
-  tryToPush: function() { return true; },
-  tryToPull: function() { return []; }
-};
-
-
-function Chan(arg) {
-  if (arg == undefined)
-    this.buffer = new Unbuffer();
-  else if (typeof arg == "object")
-    this.buffer = arg
-  else if (arg === 0)
-    this.buffer = nullBuffer;
-  else
-    this.buffer = new Buffer(arg || 1);
+function Chan(buffer) {
+  this.buffer = buffer;
   this.isClosed = false;
 };
 
@@ -134,8 +57,27 @@ Chan.prototype.close = function() {
   this.isClosed = true;
 };
 
-exports.chan = function(size) {
-  return new Chan(size);
+
+exports.go = function(machine) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  var gen = machine.apply(undefined, args);
+  go_(gen, gen.next());
+};
+
+
+exports.chan = function(arg) {
+  var buffer;
+
+  if (arg == undefined)
+    buffer = new cb.Unbuffer();
+  else if (typeof arg == "object")
+    buffer = arg
+  else if (arg === 0)
+    buffer = cb.nullBuffer;
+  else
+    buffer = new cb.Buffer(arg || 1);
+
+  return new Chan(buffer);
 };
 
 
