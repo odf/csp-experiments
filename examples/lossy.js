@@ -17,10 +17,12 @@ var run = function(buffer) {
     ch.close();
   });
 
-  return cu.each(console.log, cu.take(60, ch)).pull();
+  return cu.each(console.log, cu.take(20, ch)).pull();
 };
 
 cc.go(function*() {
+  yield run(new cb.Buffer(5));
+  console.log();
   yield run(new cb.DroppingBuffer(5));
   console.log();
   run(new cb.SlidingBuffer(5));
