@@ -2,17 +2,12 @@
 
 var cc = require('./core');
 
-var callback = function(ch) {
-  return function(err, val) {
-    cc.go(function*() {
-      yield ch.push(err ? cc.wrapError(new Error(err)) : cc.wrapValue(val));
-    });
-  }
-};
-
 var apply = exports.apply = function(fn, context, args) {
-  var ch = cc.chan();
-  fn.apply(context, args.concat(callback(ch)));
+  var ch = cc.chan(1);
+  var callback = function(err, val) {
+    ch.pushSync(err ? cc.wrapError(new Error(err)) : cc.wrapValue(val));
+  };
+  fn.apply(context, args.concat(callback));
   return cc.unwrap(ch);
 };
 

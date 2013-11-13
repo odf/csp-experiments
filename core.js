@@ -41,6 +41,15 @@ Chan.prototype.push = function(val) {
   }.bind(this);
 };
 
+Chan.prototype.pushSync = function(val) {
+  if (val === undefined)
+    throw new Error("synchronous push requires an argument");
+  else if (this.isClosed)
+    throw new Error("synchronous push to closed channel");
+  else if (!this.buffer.tryToPush(val))
+    throw new Error("synchronous push failed");
+};
+
 Chan.prototype.pull = function() {
   return function() {
     var res = this.buffer.tryToPull();
@@ -51,6 +60,14 @@ Chan.prototype.pull = function() {
     else
       return { state: "park" };
   }.bind(this);
+};
+
+Chan.prototype.pullSync = function() {
+  var res = this.buffer.tryToPull();
+  if (res.length > 0)
+    return res[0];
+  else
+    throw new Error("synchronous pull failed");
 };
 
 Chan.prototype.close = function() {
