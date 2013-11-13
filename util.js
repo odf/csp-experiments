@@ -33,12 +33,17 @@ exports.each = function(fn, ch) {
   return done;
 };
 
-var wrap = exports.wrapTransformer = function(filter, args, inchs, keepOpen)
+var pipe = exports.pipe = function()
 {
+  var args = Array.prototype.slice.call(arguments);
+  var filter = args.shift();
+  var keepOpen = args.pop();
+  var inchs = args.pop();
+
   var outch = cc.chan();
   var done = cc.chan();
 
-  cc.go.apply(this, [filter].concat(args, [inchs], outch, done));
+  cc.go.apply(this, [].concat(filter, args, [inchs, outch, done]));
   cc.go(function*() {
     yield done.pull();
     if (!keepOpen)
@@ -51,27 +56,27 @@ var wrap = exports.wrapTransformer = function(filter, args, inchs, keepOpen)
 };
 
 exports.map = function(fn, ch, keepInputOpen) {
-  return wrap(cf.map, [fn], [ch], keepInputOpen);
+  return pipe(cf.map, fn, [ch], keepInputOpen);
 };
 
 exports.filter = function(pred, ch, keepInputOpen) {
-  return wrap(cf.filter, [pred], [ch], keepInputOpen);
+  return pipe(cf.filter, pred, [ch], keepInputOpen);
 };
 
 exports.take = function(n, ch, keepInputOpen) {
-  return wrap(cf.take, [n], [ch], keepInputOpen);
+  return pipe(cf.take, n, [ch], keepInputOpen);
 };
 
 exports.merge = function(inchs, keepInputsOpen) {
-  return wrap(cf.merge, [], inchs, keepInputsOpen);
+  return pipe(cf.merge, inchs, keepInputsOpen);
 };
 
 exports.combine = function(inchs, keepInputsOpen) {
-  return wrap(cf.combine, [], inchs, keepInputsOpen);
+  return pipe(cf.combine, inchs, keepInputsOpen);
 };
 
 exports.zip = function(inchs, keepInputsOpen) {
-  return wrap(cf.zip, [], inchs, keepInputsOpen);
+  return pipe(cf.zip, inchs, keepInputsOpen);
 };
 
 exports.scatter = function(preds, inch, keepInputOpen) {
