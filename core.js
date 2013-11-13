@@ -104,16 +104,15 @@ exports.pass = function(milliseconds) {
   };
 };
 
-exports.select = function(channels, default_value) {
+exports.select = function(ops, default_value) {
   return function() {
-    for (var i = 0; i < channels.length; ++i) {
-      var res = channels[i].pull()();
-      if (res.state == "continue") {
+    for (var i = 0; i < ops.length; ++i) {
+      var op = ops[i];
+      var res = (op.constructor == Chan) ? op.pull()() : op[0].push(op[1])();
+      if (res.state == "continue")
         return { state: "continue",
-                 value: { index:   i,
-                          channel: channels[i],
-                          value:   res.value } };
-      }
+                 value: { index: i,
+                          value: res.value } };
     }
     if (default_value === undefined)
       return { state: "park" };

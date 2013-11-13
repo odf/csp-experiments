@@ -4,12 +4,12 @@ var cc = require('./core');
 
 exports.source = function(gen, ctrl) {
   var ch = cc.chan();
+  ctrl = ctrl || cc.chan(0);
 
   cc.go(function*() {
     for (var x of gen) {
-      if (ctrl && (yield cc.select([ctrl], null)))
-        break;
-      if (!(yield ch.push(x)))
+      var res = yield cc.select([ctrl, [ch, x]]);
+      if (res.index == 0 || res.value == false)
         break;
     }
     ch.close();
