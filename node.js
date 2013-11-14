@@ -21,9 +21,9 @@ exports.bind = function(fn, context)
   return call.bind(null, fn, context);
 };
 
-exports.fromStream = function(stream)
+exports.fromStream = function(stream, outch, keepOpen)
 {
-  var ch = cc.chan();
+  var ch = outch || cc.chan();
 
   stream.on('data', function(chunk) {
     cc.go(function*() {
@@ -32,7 +32,8 @@ exports.fromStream = function(stream)
   });
 
   stream.on('end', function() {
-    ch.close();
+    if (!keepOpen)
+      ch.close();
   });
 
   stream.on('error', function(err) {
