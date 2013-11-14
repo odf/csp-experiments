@@ -2,27 +2,27 @@
 
 var cc = require('./core');
 
-exports.map = function*(fn, inchs, outch, done) {
+exports.map = function*(fn, inch, outch, done) {
   var val;
-  while((val = yield inchs[0].pull()) !== undefined)
+  while((val = yield inch.pull()) !== undefined)
     if(!(yield outch.push(fn(val))))
       break;
   yield done.push(true);
 };
 
-exports.filter = function*(pred, inchs, outch, done) {
+exports.filter = function*(pred, inch, outch, done) {
   var val;
-  while((val = yield inchs[0].pull()) !== undefined)
+  while((val = yield inch.pull()) !== undefined)
     if (pred(val))
       if (!(yield outch.push(val)))
         break;
   yield done.push(true);
 };
 
-exports.take = function*(n, inchs, outch, done) {
+exports.take = function*(n, inch, outch, done) {
   var val, i;
   for (i = 0; i < n; ++i) {
-    val = yield inchs[0].pull();
+    val = yield inch.pull();
     if (val === undefined || !(yield outch.push(val)))
       break;
   }

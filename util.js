@@ -33,38 +33,46 @@ exports.each = function(fn, ch) {
   return done;
 };
 
+var closeAll = function(chs) {
+  if (chs.constructor == Array)
+    chs.forEach(function(ch) { ch.close(); });
+  else
+    chs.close();
+};
+
+var sentinel = function*(inch, outch, done, keepOpen) {
+  yield done.pull();
+  if (!keepOpen)
+    closeAll(inch);
+  closeAll(outch);
+};
+
 var pipe = exports.pipe = function()
 {
-  var args = Array.prototype.slice.call(arguments);
-  var filter = args.shift();
+  var args     = Array.prototype.slice.call(arguments);
+  var filter   = args.shift();
   var keepOpen = args.pop();
-  var inchs = args.pop();
+  var inch     = args.pop();
 
   var outch = cc.chan();
-  var done = cc.chan();
+  var done  = cc.chan();
 
-  cc.go.apply(this, [].concat(filter, args, [inchs, outch, done]));
-  cc.go(function*() {
-    yield done.pull();
-    if (!keepOpen)
-      for (var ch of inchs.values())
-        ch.close();
-    outch.close();
-  });
+  cc.go.apply(this, [].concat(filter, args, [inch, outch, done]));
+  cc.go(sentinel, inch, outch, done, keepOpen);
 
   return outch;
 };
 
 exports.map = function(fn, ch, keepInputOpen) {
-  return pipe(cf.map, fn, [ch], keepInputOpen);
+  return pipe(cf.map, fn, ch, keepInputOpen);
 };
 
 exports.filter = function(pred, ch, keepInputOpen) {
-  return pipe(cf.filter, pred, [ch], keepInputOpen);
+  return pipe(cf.filter, pred, ch, keepInputOpen);
 };
 
 exports.take = function(n, ch, keepInputOpen) {
-  return pipe(cf.take, n, [ch], keepInputOpen);
+  return pipe(cf.take, n, ch, keepInputOpen);
 };
 
 exports.merge = function(inchs, keepInputsOpen) {
@@ -79,19 +87,12 @@ exports.zip = function(inchs, keepInputsOpen) {
   return pipe(cf.zip, inchs, keepInputsOpen);
 };
 
-exports.scatter = function(preds, inch, keepInputOpen) {
+exports.scatter = function(preds, inch, keepOpen) {
   var outchs = preds.map(function () { return cc.chan(); });
   var done = cc.chan();
-  var ch;
 
   cc.go(cf.scatter, preds, inch, outchs, done);
-  cc.go(function*() {
-    yield done.pull();
-    if (!keepInputOpen)
-      inch.close();
-    for (var ch of outchs.values())
-      ch.close();
-  });
+  cc.go(sentinel, inch, outchs, done, keepOpen);
 
   return outchs;
 };
