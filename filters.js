@@ -2,6 +2,13 @@
 
 var cc = require('./core');
 
+exports.source = function*(gen, outch, done) {
+  for (var val of gen)
+    if (!(yield outch.push(val)))
+      break;
+  yield done.push(true);
+};
+
 exports.map = function*(fn, inch, outch, done) {
   var val;
   while((val = yield inch.pull()) !== undefined)
@@ -116,5 +123,12 @@ exports.scatter = function*(preds, inch, outchs, done) {
       }
     }
   }
+  yield done.push(true);
+};
+
+exports.each = function*(fn, inch, done) {
+  var val;
+  while ((val = yield inch.pull()) !== undefined)
+    fn(val);
   yield done.push(true);
 };
