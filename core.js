@@ -1,5 +1,7 @@
 'use strict';
 
+require('setimmediate');
+
 var cb = require('./buffers');
 
 var go_ = function(machine, step) {
