@@ -36,6 +36,35 @@ exports.take = function*(n, inch, outch, done) {
   yield done.push(true);
 };
 
+exports.takeWhile = function*(pred, inch, outch, done) {
+  var val;
+  while((val = yield inch.pull()) !== undefined)
+    if (!pred(val) || !(yield outch.push(val)))
+      break;
+  yield done.push(true);
+};
+
+exports.drop = function*(n, inch, outch, done) {
+  var val, i = 0;
+  while((val = yield inch.pull()) !== undefined) {
+    if (i < n)
+      i += 1;
+    else if (!(yield outch.push(val)))
+      break;
+  }
+  yield done.push(true);
+};
+
+exports.dropWhile = function*(pred, inch, outch, done) {
+  var val, go = false;
+  while((val = yield inch.pull()) !== undefined) {
+    go = go || !pred(val);
+    if (go && !(yield outch.push(val)))
+      break;
+  }
+  yield done.push(true);
+};
+
 exports.merge = function*(inchs, outch, done) {
   var active = inchs.slice();
 

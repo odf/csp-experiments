@@ -53,6 +53,18 @@ exports.take = function(n, ch, keepOpen) {
   return pipe(cf.take, n, ch, keepOpen);
 };
 
+exports.takeWhile = function(pred, ch, keepOpen) {
+  return pipe(cf.takeWhile, pred, ch, keepOpen);
+};
+
+exports.drop = function(n, ch, keepOpen) {
+  return pipe(cf.drop, n, ch, keepOpen);
+};
+
+exports.dropWhile = function(pred, ch, keepOpen) {
+  return pipe(cf.dropWhile, pred, ch, keepOpen);
+};
+
 exports.merge = function(chs, keepOpen) {
   return pipe(cf.merge, chs, keepOpen);
 };
