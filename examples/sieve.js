@@ -3,7 +3,7 @@
 'use strict';
 
 var cc = require("../core");
-var cu = require("../util");
+var cf = require("../filters");
 
 var infiniteRange = function*(start) {
   for (var i = start; ; i += 1)
@@ -16,18 +16,25 @@ var test = function(prime) {
   };
 };
 
-var sieve = function*(n) {
-  var ch  = cu.source(infiniteRange(2));
+var sieve = function*(outch, done) {
+  var ch  = cf.source(infiniteRange(2));
   var prime;
 
-  console.log("The first " + n + " prime numbers:");
-
-  for (var i = 0; i < n; i++) {
+  for (;;) {
     prime = yield ch.pull();
-    console.log(prime);
-    ch = cu.filter(test(prime), ch);
+    if (!(yield outch.push(prime)))
+      break;
+    ch = cf.filter(test(prime), ch);
   }
   ch.close();
+
+  yield done.push(true);
 };
 
-cc.go(sieve, parseInt(process.argv[2] || "50"));
+var n = parseInt(process.argv[2] || "50");
+var start = parseInt(process.argv[3] || "2");
+
+var primes = cf.pipe(sieve, [], false);
+
+cf.each(console.log,
+        cf.take(n, cf.dropWhile(function(p) { return p < start; }, primes)));
