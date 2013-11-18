@@ -1,8 +1,8 @@
 {
   "name": "csp-experiments",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "private": true,
-  "main": "./core.js",
+  "main": "./index.js",
   "dependencies": {
     "setimmediate": "~1.0.1"
   }
