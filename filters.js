@@ -11,87 +11,90 @@ var closeAll = function(chs) {
     chs.close();
 };
 
-var sentinel = function*(inch, outch, done, keepOpen) {
+var sentinel = function*(inch, outch, done, options) {
   yield done.pull();
-  if (!keepOpen)
+  if (!options.keepInput)
     closeAll(inch);
-  closeAll(outch);
+  if (!options.keepOutput)
+    closeAll(outch);
   done.close();
+};
+
+var wrapch = function(ch) {
+  return (Array.isArray(ch) && ch.length > 0) ? [ch] : ch;
 };
 
 var pipe = exports.pipe = function()
 {
-  var args     = Array.prototype.slice.call(arguments);
-  var filter   = args.shift();
-  var keepOpen = args.pop();
-  var inch     = args.pop();
+  var args    = Array.prototype.slice.call(arguments);
+  var filter  = args.shift();
+  var options = args.pop();
+  var inch    = args.pop();
 
-  var outch = cc.chan();
+  var outch = options.output || cc.chan();
   var done  = cc.chan();
 
-  var inchs = (Array.isArray(inch) && inch.length > 0) ? [inch] : inch;
-
-  cc.go.apply(this, [].concat(filter, args, inchs, outch, done));
-  cc.go(sentinel, inch, outch, done, keepOpen);
+  cc.go.apply(this, [].concat(filter, args, wrapch(inch), wrapch(outch), done));
+  cc.go(sentinel, inch, outch, done, options);
 
   return outch;
 };
 
-exports.source = function(gen, keepOpen) {
-  return pipe(cf.source, gen, [], keepOpen);
+exports.source = function(gen, options) {
+  return pipe(cf.source, gen, [], options || {});
 };
 
-exports.map = function(fn, ch, keepOpen) {
-  return pipe(cf.map, fn, ch, keepOpen);
+exports.map = function(fn, ch, options) {
+  return pipe(cf.map, fn, ch, options || {});
 };
 
-exports.filter = function(pred, ch, keepOpen) {
-  return pipe(cf.filter, pred, ch, keepOpen);
+exports.filter = function(pred, ch, options) {
+  return pipe(cf.filter, pred, ch, options || {});
 };
 
-exports.take = function(n, ch, keepOpen) {
-  return pipe(cf.take, n, ch, keepOpen);
+exports.take = function(n, ch, options) {
+  return pipe(cf.take, n, ch, options || {});
 };
 
-exports.takeWhile = function(pred, ch, keepOpen) {
-  return pipe(cf.takeWhile, pred, ch, keepOpen);
+exports.takeWhile = function(pred, ch, options) {
+  return pipe(cf.takeWhile, pred, ch, options || {});
 };
 
-exports.drop = function(n, ch, keepOpen) {
-  return pipe(cf.drop, n, ch, keepOpen);
+exports.drop = function(n, ch, options) {
+  return pipe(cf.drop, n, ch, options || {});
 };
 
-exports.dropWhile = function(pred, ch, keepOpen) {
-  return pipe(cf.dropWhile, pred, ch, keepOpen);
+exports.dropWhile = function(pred, ch, options) {
+  return pipe(cf.dropWhile, pred, ch, options || {});
 };
 
-exports.merge = function(chs, keepOpen) {
-  return pipe(cf.merge, chs, keepOpen);
+exports.merge = function(chs, options) {
+  return pipe(cf.merge, chs, options || {});
 };
 
-exports.combine = function(chs, keepOpen) {
-  return pipe(cf.combine, chs, keepOpen);
+exports.combine = function(chs, options) {
+  return pipe(cf.combine, chs, options || {});
 };
 
-exports.zip = function(chs, keepOpen) {
-  return pipe(cf.zip, chs, keepOpen);
+exports.zip = function(chs, options) {
+  return pipe(cf.zip, chs, options || {});
 };
 
-exports.scatter = function(preds, inch, keepOpen) {
+exports.scatter = function(preds, inch, options) {
   var outchs = preds.map(function () { return cc.chan(); });
   var done = cc.chan();
 
   cc.go(cf.scatter, preds, inch, outchs, done);
-  cc.go(sentinel, inch, outchs, done, keepOpen);
+  cc.go(sentinel, inch, outchs, done, options || {});
 
   return outchs;
 };
 
-exports.each = function(fn, ch, keepOpen) {
+exports.each = function(fn, ch, options) {
   var done  = cc.chan();
 
   cc.go(cf.each, fn, ch, done);
-  cc.go(sentinel, ch, done, done, keepOpen);
+  cc.go(sentinel, ch, done, done, options || {});
 
   return done;
 };
