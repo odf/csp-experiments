@@ -2,8 +2,7 @@
 
 'use strict';
 
-var cc = require("../core");
-var cf = require("../filters");
+var cc = require("../index");
 
 var infiniteRange = function*(start) {
   for (var i = start; ; i += 1)
@@ -17,14 +16,14 @@ var test = function(prime) {
 };
 
 var sieve = function*(outch, done) {
-  var ch  = cf.source(infiniteRange(2));
+  var ch  = cc.source(infiniteRange(2));
   var prime;
 
   for (;;) {
     prime = yield ch.pull();
     if (!(yield outch.push(prime)))
       break;
-    ch = cf.filter(test(prime), ch);
+    ch = cc.filter(test(prime), ch);
   }
   ch.close();
 
@@ -34,7 +33,7 @@ var sieve = function*(outch, done) {
 var n = parseInt(process.argv[2] || "50");
 var start = parseInt(process.argv[3] || "2");
 
-var primes = cf.pipe(sieve, [], false);
+var primes = cc.pipe(sieve, [], false);
 
-cf.each(console.log,
-        cf.take(n, cf.dropWhile(function(p) { return p < start; }, primes)));
+cc.each(console.log,
+        cc.take(n, cc.dropWhile(function(p) { return p < start; }, primes)));

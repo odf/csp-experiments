@@ -1,8 +1,6 @@
 'use strict';
 
-var cc = require('../core');
-var cu = require('../util');
-var cb = require('../buffers');
+var cc = require('../index');
 
 var run = function(buffer) {
   var ch = cc.chan(buffer);
@@ -17,13 +15,13 @@ var run = function(buffer) {
     ch.close();
   });
 
-  return cu.each(console.log, cu.take(20, ch)).pull();
+  return cc.each(console.log, cc.take(20, ch)).pull();
 };
 
 cc.go(function*() {
-  yield run(new cb.Buffer(5));
+  yield run(new cc.Buffer(5));
   console.log();
-  yield run(new cb.DroppingBuffer(5));
+  yield run(new cc.DroppingBuffer(5));
   console.log();
-  run(new cb.SlidingBuffer(5));
+  run(new cc.SlidingBuffer(5));
 });

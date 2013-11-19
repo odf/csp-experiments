@@ -1,7 +1,6 @@
 'use strict';
 
-var cc = require('../core');
-var cu = require('../util');
+var cc = require('../index');
 
 var source = function(x) {
   var ch = cc.chan();
@@ -27,16 +26,16 @@ var makeChannels = function() {
 cc.go(function*() {
   var done;
 
-  done = cu.each(console.log, cu.take(30, cu.merge(makeChannels())));
+  done = cc.each(console.log, cc.take(30, cc.merge(makeChannels())));
   yield done.pull();
 
   console.log();
 
-  done = cu.each(console.log, cu.take(20, cu.combine(makeChannels())));
+  done = cc.each(console.log, cc.take(20, cc.combine(makeChannels())));
   yield done.pull();
 
   console.log();
 
-  done = cu.each(console.log, cu.take(20, cu.zip(makeChannels())));
+  done = cc.each(console.log, cc.take(20, cc.zip(makeChannels())));
   yield done.pull();
 });

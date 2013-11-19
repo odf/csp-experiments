@@ -1,8 +1,6 @@
 'use strict';
 
-var cc = require('../core');
-var cn = require('../node');
-var cu = require('../util');
+var cc = require('../index');
 
 var quote = function(s) {
   return "-- " + s.replace(/\n$/, '') + " --";
@@ -10,5 +8,5 @@ var quote = function(s) {
 
 cc.go(function* () {
   process.stdin.setEncoding('utf8');
-  cu.each(console.log, cu.map(quote, cn.fromStream(process.stdin)));
+  cc.each(console.log, cc.map(quote, cc.fromStream(process.stdin)));
 });

@@ -1,12 +1,11 @@
 'use strict';
 
 var fs = require('fs');
-var cc = require('../core');
-var cn = require('../node');
+var cc = require('../index');
 
 cc.go(function* () {
   var path = process.argv[2];
   var options = { encoding: 'utf8' };
 
-  console.log(yield cn.call(fs.readFile, fs, path, options));
+  console.log(yield cc.call(fs.readFile, fs, path, options));
 });
