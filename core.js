@@ -4,6 +4,22 @@ require('setimmediate');
 
 var cb = require('./buffers');
 
+
+var unresolved = exports.unresolved = { state: "park" };
+
+var rejected = exports.rejected = function(err) {
+  return { state: "error", value: err };
+};
+
+var resolved = exports.resolved = function(val) {
+  return { state: "continue", value: val };
+};
+
+var isResolved = exports.isResolved = function(res) {
+  return res.state == 'continue';
+};
+
+
 var go_ = function(machine, step) {
   while(!step.done) {
     var res = step.value();
@@ -33,13 +49,13 @@ function Chan(buffer) {
 Chan.prototype.push = function(val) {
   return function() {
     if (val === undefined)
-      return { state: "error", value: new Error("push() requires an argument") };
+      return rejected(new Error("push() requires an argument"));
     else if (this.isClosed)
-      return { state: "continue", value: false };
+      return resolved(false);
     else if(this.buffer.tryToPush(val))
-      return { state: "continue", value: true };
+      return resolved(true);
     else
-      return { state: "park" };
+      return unresolved;
   }.bind(this);
 };
 
@@ -56,11 +72,11 @@ Chan.prototype.pull = function() {
   return function() {
     var res = this.buffer.tryToPull();
     if (res.length > 0)
-      return { state: "continue", value: res[0] };
+      return resolved(res[0]);
     else if (this.isClosed)
-      return { state: "continue" };
+      return resolved();
     else
-      return { state: "park" };
+      return unresolved;
   }.bind(this);
 };
 
@@ -84,6 +100,13 @@ exports.go = function(machine) {
 };
 
 
+exports.pass = function(milliseconds) {
+  return function() {
+    return { state: "pass", value: milliseconds || 0 };
+  };
+};
+
+
 exports.chan = function(arg) {
   var buffer;
 
@@ -100,40 +123,17 @@ exports.chan = function(arg) {
 };
 
 
-exports.pass = function(milliseconds) {
-  return function() {
-    return { state: "pass", value: milliseconds || 0 };
-  };
-};
-
 exports.select = function(ops, default_value) {
   return function() {
     for (var i = 0; i < ops.length; ++i) {
       var op = ops[i];
       var res = (op.constructor == Chan) ? op.pull()() : op[0].push(op[1])();
-      if (res.state == "continue")
-        return { state: "continue",
-                 value: { index: i,
-                          value: res.value } };
+      if (isResolved(res))
+        return resolved({ index: i, value: res.value });
     }
     if (default_value === undefined)
-      return { state: "park" };
+      return unresolved;
     else
-      return { state: "continue", value: default_value };
-  }
-};
-
-exports.wrapError = function(err) {
-  return { state: "error", value: err };
-};
-
-exports.wrapValue = function(val) {
-  return { state: "continue", value: val };
-};
-
-exports.unwrap = function(ch) {
-  return function() {
-    var res = ch.pull()();
-    return (res.state == "continue") ? res.value : res;
+      return resolved(default_value);
   }
 };

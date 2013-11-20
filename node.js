@@ -3,12 +3,14 @@
 var cc = require('./core');
 
 var apply = exports.apply = function(fn, context, args) {
-  var ch = cc.chan(1);
+  var result = cc.unresolved;
+
   var callback = function(err, val) {
-    ch.pushSync(err ? cc.wrapError(new Error(err)) : cc.wrapValue(val));
+    result = err ? cc.rejected(new Error(err)) : cc.resolved(val);
   };
   fn.apply(context, args.concat(callback));
-  return cc.unwrap(ch);
+
+  return function() { return result; };
 };
 
 var call = exports.call = function(fn, context) {
