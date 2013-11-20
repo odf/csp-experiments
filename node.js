@@ -3,35 +3,15 @@
 var cc = require('./core');
 
 
-function Deferred() {
-  this.result = cc.unresolved;
-};
-
-Deferred.prototype.resolve = function(val) {
-  this.result = cc.resolved(val);
-};
-
-Deferred.prototype.reject = function(val) {
-  this.result = cc.rejected(val);
-};
-
-Deferred.prototype.errand = function() {
-  return function() { return this.result; }.bind(this);
-};
-
-
 var apply = exports.apply = function(fn, context, args) {
-  var deferred = new Deferred();
+  var ch = cc.chan(1);
 
   var callback = function(err, val) {
-    if (err)
-      deferred.reject(new Error(err));
-    else
-      deferred.resolve(val);
+    ch.pushSync(err ? cc.rejected(new Error(err)) : cc.resolved(val));
   };
   fn.apply(context, args.concat(callback));
 
-  return deferred.errand();
+  return cc.unwrap(ch);
 };
 
 

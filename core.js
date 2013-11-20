@@ -137,3 +137,11 @@ exports.select = function(ops, default_value) {
       return resolved(default_value);
   }
 };
+
+
+exports.unwrap = function(ch) {
+  return function() {
+    var res = ch.pull()();
+    return isResolved(res) ? res.value : res;
+  };
+};
