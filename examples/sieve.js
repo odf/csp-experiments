@@ -36,13 +36,9 @@ var doomed = function(inch, ctrl) {
 
   cc.go(function*() {
     var val;
-    while (true) {
-      val = yield cc.select([inch, ctrl]);
-      if (val.index > 0 || val.value === undefined)
+    while ((val = (yield cc.select([ctrl, inch])).value) !== undefined)
+      if (!(yield cc.push(outch, val)))
         break;
-      if (!(yield cc.push(outch, val.value)))
-        break;
-    }
     cc.close(inch);
     cc.close(ctrl);
     cc.close(outch);
