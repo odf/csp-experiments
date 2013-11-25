@@ -79,6 +79,14 @@ exports.merge = function*(inchs, outch, done) {
   yield cc.push(done, true);
 };
 
+exports.croppedMerge = function*(inchs, outch, done) {
+  var val;
+  while ((val = (yield cc.select(inchs)).value) !== undefined)
+    if (!(yield cc.push(outch, val)))
+      break;
+  yield cc.push(done, true);
+};
+
 exports.combine = function*(inchs, outch, done) {
   var results, active, indices, i, res;
 

@@ -72,6 +72,10 @@ exports.merge = function(chs, options) {
   return pipe(cf.merge, chs, options || {});
 };
 
+exports.croppedMerge = function(chs, options) {
+  return pipe(cf.croppedMerge, chs, options || {});
+};
+
 exports.combine = function(chs, options) {
   return pipe(cf.combine, chs, options || {});
 };

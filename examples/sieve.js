@@ -31,23 +31,6 @@ var sieve = function*(outch, done) {
 };
 
 
-var doomed = function(inch, ctrl) {
-  var outch = cc.chan();
-
-  cc.go(function*() {
-    var val;
-    while ((val = (yield cc.select([ctrl, inch])).value) !== undefined)
-      if (!(yield cc.push(outch, val)))
-        break;
-    cc.close(inch);
-    cc.close(ctrl);
-    cc.close(outch);
-  });
-
-  return outch;
-};
-
-
 var n = parseInt(process.argv[2] || "50");
 var start = parseInt(process.argv[3] || "2");
 
@@ -57,4 +40,4 @@ var t = cc.timeout(100);
 
 cc.each(console.log,
         cc.take(n, cc.dropWhile(function(p) { return p < start; },
-                                doomed(primes, t))));
+                                cc.croppedMerge([primes, t]))));
