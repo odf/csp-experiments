@@ -30,10 +30,35 @@ var sieve = function*(outch, done) {
   yield cc.push(done, true);
 };
 
+
+var doomed = function(inch, ctrl) {
+  var outch = cc.chan();
+
+  cc.go(function*() {
+    var val;
+    while (true) {
+      val = yield cc.select([inch, ctrl]);
+      if (val.index > 0 || val.value === undefined)
+        break;
+      if (!(yield cc.push(outch, val.value)))
+        break;
+    }
+    cc.close(inch);
+    cc.close(ctrl);
+    cc.close(outch);
+  });
+
+  return outch;
+};
+
+
 var n = parseInt(process.argv[2] || "50");
 var start = parseInt(process.argv[3] || "2");
 
 var primes = cc.pipe(sieve, [], false);
 
+var t = cc.timeout(100);
+
 cc.each(console.log,
-        cc.take(n, cc.dropWhile(function(p) { return p < start; }, primes)));
+        cc.take(n, cc.dropWhile(function(p) { return p < start; },
+                                doomed(primes, t))));

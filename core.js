@@ -54,7 +54,7 @@ exports.pass = function(milliseconds) {
 };
 
 
-exports.chan = function(arg) {
+var chan = exports.chan = function(arg) {
   var buffer;
 
   if (arg == undefined)
@@ -114,8 +114,26 @@ exports.pullImmediate = function(ch) {
     throw new Error("forced pull failed");
 };
 
-exports.close = function(ch) {
+var close = exports.close = function(ch) {
   ch.isClosed = true;
+  if (ch.onClose)
+    ch.onClose();
+};
+
+
+exports.timeout = function(ms) {
+  var t;
+  var ch = chan(0);
+
+  ch.onClose = function() {
+    clearTimeout(t);
+  };
+
+  t = setTimeout(function() {
+    close(ch);
+  }, ms);
+
+  return ch;
 };
 
 
