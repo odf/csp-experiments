@@ -4,65 +4,65 @@ var cc = require('./core');
 
 exports.source = function*(gen, outch, done) {
   for (var val of gen)
-    if (!(yield outch.push(val)))
+    if (!(yield cc.push(outch, val)))
       break;
-  yield done.push(true);
+  yield cc.push(done, true);
 };
 
 exports.map = function*(fn, inch, outch, done) {
   var val;
-  while((val = yield inch.pull()) !== undefined)
-    if(!(yield outch.push(fn(val))))
+  while((val = yield cc.pull(inch)) !== undefined)
+    if(!(yield cc.push(outch, fn(val))))
       break;
-  yield done.push(true);
+  yield cc.push(done, true);
 };
 
 exports.filter = function*(pred, inch, outch, done) {
   var val;
-  while((val = yield inch.pull()) !== undefined)
+  while((val = yield cc.pull(inch)) !== undefined)
     if (pred(val))
-      if (!(yield outch.push(val)))
+      if (!(yield cc.push(outch, val)))
         break;
-  yield done.push(true);
+  yield cc.push(done, true);
 };
 
 exports.take = function*(n, inch, outch, done) {
   var val, i;
   for (i = 0; i < n; ++i) {
-    val = yield inch.pull();
-    if (val === undefined || !(yield outch.push(val)))
+    val = yield cc.pull(inch);
+    if (val === undefined || !(yield cc.push(outch, val)))
       break;
   }
-  yield done.push(true);
+  yield cc.push(done, true);
 };
 
 exports.takeWhile = function*(pred, inch, outch, done) {
   var val;
-  while((val = yield inch.pull()) !== undefined)
-    if (!pred(val) || !(yield outch.push(val)))
+  while((val = yield cc.pull(inch)) !== undefined)
+    if (!pred(val) || !(yield cc.push(outch, val)))
       break;
-  yield done.push(true);
+  yield cc.push(done, true);
 };
 
 exports.drop = function*(n, inch, outch, done) {
   var val, i = 0;
-  while((val = yield inch.pull()) !== undefined) {
+  while((val = yield cc.pull(inch)) !== undefined) {
     if (i < n)
       i += 1;
-    else if (!(yield outch.push(val)))
+    else if (!(yield cc.push(outch, val)))
       break;
   }
-  yield done.push(true);
+  yield cc.push(done, true);
 };
 
 exports.dropWhile = function*(pred, inch, outch, done) {
   var val, go = false;
-  while((val = yield inch.pull()) !== undefined) {
+  while((val = yield cc.pull(inch)) !== undefined) {
     go = go || !pred(val);
-    if (go && !(yield outch.push(val)))
+    if (go && !(yield cc.push(outch, val)))
       break;
   }
-  yield done.push(true);
+  yield cc.push(done, true);
 };
 
 exports.merge = function*(inchs, outch, done) {
@@ -73,10 +73,10 @@ exports.merge = function*(inchs, outch, done) {
     if (res.value === undefined)
       active.splice(res.index, 1);
     else
-      if (!(yield outch.push(res.value)))
+      if (!(yield cc.push(outch, res.value)))
         break;
   }
-  yield done.push(true);
+  yield cc.push(done, true);
 };
 
 exports.combine = function*(inchs, outch, done) {
@@ -98,11 +98,11 @@ exports.combine = function*(inchs, outch, done) {
       indices.splice(i, 1);
     } else {
       results[indices[i]] = res.value;
-      if (!(yield outch.push(results.slice())))
+      if (!(yield cc.push(outch, results.slice())))
         break;
     }
   }
-  yield done.push(true);
+  yield cc.push(done, true);
 };
 
 exports.zip = function*(inchs, outch, done) {
@@ -130,10 +130,10 @@ exports.zip = function*(inchs, outch, done) {
       indices.splice(i, 1);
     }
 
-    if (!(yield outch.push(results.slice())))
+    if (!(yield cc.push(outch, results.slice())))
       break;
   }
-  yield done.push(true);
+  yield cc.push(done, true);
 };
 
 exports.scatter = function*(preds, inch, outchs, done) {
@@ -141,10 +141,10 @@ exports.scatter = function*(preds, inch, outchs, done) {
   outchs = outchs.slice();
 
   var val;
-  while(preds.length > 0 && (val = yield inch.pull()) !== undefined) {
+  while(preds.length > 0 && (val = yield cc.pull(inch)) !== undefined) {
     for (var i = 0; i < preds.length; ++i) {
       if ((preds[i] == true) || preds[i](val)) {
-        if (!(yield outchs[i].push(val))) {
+        if (!(yield cc.push(outchs[i], val))) {
           preds.splice(i, 1);
           outchs.splice(i, 1);
         }
@@ -152,12 +152,12 @@ exports.scatter = function*(preds, inch, outchs, done) {
       }
     }
   }
-  yield done.push(true);
+  yield cc.push(done, true);
 };
 
 exports.each = function*(fn, inch, done) {
   var val;
-  while ((val = yield inch.pull()) !== undefined)
+  while ((val = yield cc.pull(inch)) !== undefined)
     fn(val);
-  yield done.push(true);
+  yield cc.push(done, true);
 };

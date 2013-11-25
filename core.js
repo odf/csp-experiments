@@ -40,59 +40,6 @@ var go_ = function(machine, step) {
   }
 };
 
-
-function Chan(buffer) {
-  this.buffer = buffer;
-  this.isClosed = false;
-};
-
-Chan.prototype.push = function(val) {
-  return function() {
-    if (val === undefined)
-      return rejected(new Error("push() requires an argument"));
-    else if (this.isClosed)
-      return resolved(false);
-    else if(this.buffer.tryToPush(val))
-      return resolved(true);
-    else
-      return unresolved;
-  }.bind(this);
-};
-
-Chan.prototype.pushSync = function(val) {
-  if (val === undefined)
-    throw new Error("synchronous push requires an argument");
-  else if (this.isClosed)
-    throw new Error("synchronous push to closed channel");
-  else if (!this.buffer.tryToPush(val))
-    throw new Error("synchronous push failed");
-};
-
-Chan.prototype.pull = function() {
-  return function() {
-    var res = this.buffer.tryToPull();
-    if (res.length > 0)
-      return resolved(res[0]);
-    else if (this.isClosed)
-      return resolved();
-    else
-      return unresolved;
-  }.bind(this);
-};
-
-Chan.prototype.pullSync = function() {
-  var res = this.buffer.tryToPull();
-  if (res.length > 0)
-    return res[0];
-  else
-    throw new Error("synchronous pull failed");
-};
-
-Chan.prototype.close = function() {
-  this.isClosed = true;
-};
-
-
 exports.go = function(machine) {
   var args = Array.prototype.slice.call(arguments, 1);
   var gen = machine.apply(undefined, args);
@@ -119,7 +66,56 @@ exports.chan = function(arg) {
   else
     buffer = new cb.Buffer(arg || 1);
 
-  return new Chan(buffer);
+  return {
+    buffer: buffer,
+    isClosed: false
+  };
+};
+
+var push = exports.push = function(ch, val) {
+  return function() {
+    if (val === undefined)
+      return rejected(new Error("push() requires an argument"));
+    else if (ch.isClosed)
+      return resolved(false);
+    else if(ch.buffer.tryToPush(val))
+      return resolved(true);
+    else
+      return unresolved;
+  };
+};
+
+exports.pushImmediate = function(ch, val) {
+  if (val === undefined)
+    throw new Error("forced push requires an argument");
+  else if (ch.isClosed)
+    throw new Error("forced push to closed channel");
+  else if (!ch.buffer.tryToPush(val))
+    throw new Error("forced push failed");
+};
+
+var pull = exports.pull = function(ch) {
+  return function() {
+    var res = ch.buffer.tryToPull();
+    if (res.length > 0)
+      return resolved(res[0]);
+    else if (ch.isClosed)
+      return resolved();
+    else
+      return unresolved;
+  };
+};
+
+exports.pullImmediate = function(ch) {
+  var res = ch.buffer.tryToPull();
+  if (res.length > 0)
+    return res[0];
+  else
+    throw new Error("forced pull failed");
+};
+
+exports.close = function(ch) {
+  ch.isClosed = true;
 };
 
 
@@ -127,7 +123,7 @@ exports.select = function(ops, default_value) {
   return function() {
     for (var i = 0; i < ops.length; ++i) {
       var op = ops[i];
-      var res = (op.constructor == Chan) ? op.pull()() : op[0].push(op[1])();
+      var res = (Array.isArray(op)) ? push(op[0], op[1])() : pull(op)();
       if (isResolved(res))
         return resolved({ index: i, value: res.value });
     }
@@ -141,7 +137,7 @@ exports.select = function(ops, default_value) {
 
 exports.unwrap = function(ch) {
   return function() {
-    var res = ch.pull()();
+    var res = pull(ch)();
     return isResolved(res) ? res.value : res;
   };
 };

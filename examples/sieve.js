@@ -20,14 +20,14 @@ var sieve = function*(outch, done) {
   var prime;
 
   for (;;) {
-    prime = yield ch.pull();
-    if (!(yield outch.push(prime)))
+    prime = yield cc.pull(ch);
+    if (!(yield cc.push(outch, prime)))
       break;
     ch = cc.filter(test(prime), ch);
   }
-  ch.close();
+  cc.close(ch);
 
-  yield done.push(true);
+  yield cc.push(done, true);
 };
 
 var n = parseInt(process.argv[2] || "50");

@@ -7,10 +7,10 @@ var source = function(x) {
   cc.go(function*() {
     for (var i = 0; ; ++i) {
       yield cc.pass(Math.random() * 100);
-      if (!(yield ch.push("" + x + "." + i)))
+      if (!(yield cc.push(ch, "" + x + "." + i)))
         break;
     }
-    ch.close();
+    cc.close(ch);
   });
 
   return ch;
@@ -27,15 +27,15 @@ cc.go(function*() {
   var done;
 
   done = cc.each(console.log, cc.take(30, cc.merge(makeChannels())));
-  yield done.pull();
+  yield cc.pull(done);
 
   console.log();
 
   done = cc.each(console.log, cc.take(20, cc.combine(makeChannels())));
-  yield done.pull();
+  yield cc.pull(done);
 
   console.log();
 
   done = cc.each(console.log, cc.take(20, cc.zip(makeChannels())));
-  yield done.pull();
+  yield cc.pull(done);
 });

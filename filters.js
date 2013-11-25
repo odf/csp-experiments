@@ -6,18 +6,18 @@ var cf = require('./raw_filters');
 
 var closeAll = function(chs) {
   if (Array.isArray(chs))
-    chs.forEach(function(ch) { ch.close(); });
+    chs.forEach(function(ch) { cc.close(ch); });
   else
-    chs.close();
+    cc.close(chs);
 };
 
 var sentinel = function*(inch, outch, done, options) {
-  yield done.pull();
+  yield cc.pull(done);
   if (!options.keepInput)
     closeAll(inch);
   if (!options.keepOutput)
     closeAll(outch);
-  done.close();
+  cc.close(done);
 };
 
 var wrapch = function(ch) {

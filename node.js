@@ -7,7 +7,7 @@ var apply = exports.apply = function(fn, context, args) {
   var ch = cc.chan(1);
 
   var callback = function(err, val) {
-    ch.pushSync(err ? cc.rejected(new Error(err)) : cc.resolved(val));
+    cc.pushImmediate(ch, err ? cc.rejected(new Error(err)) : cc.resolved(val));
   };
   fn.apply(context, args.concat(callback));
 
@@ -31,13 +31,13 @@ exports.fromStream = function(stream, outch, keepOpen)
 
   stream.on('data', function(chunk) {
     cc.go(function*() {
-      yield ch.push(chunk);
+      yield cc.push(ch, chunk);
     });
   });
 
   stream.on('end', function() {
     if (!keepOpen)
-      ch.close();
+      cc.close(ch);
   });
 
   stream.on('error', function(err) {

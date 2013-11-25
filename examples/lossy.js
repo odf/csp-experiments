@@ -7,15 +7,15 @@ var run = function(buffer) {
 
   cc.go(function*() {
     for (var i = 1; ; ++i) {
-      if (!(yield ch.push(i)))
+      if (!(yield cc.push(ch, i)))
         break;
       if (i % 10 == 0)
         yield cc.pass();
     }
-    ch.close();
+    cc.close(ch);
   });
 
-  return cc.each(console.log, cc.take(20, ch)).pull();
+  return cc.pull(cc.each(console.log, cc.take(20, ch)));
 };
 
 cc.go(function*() {
