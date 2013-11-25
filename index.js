@@ -6,9 +6,9 @@ var extend = function(obj, other) {
     obj[p] = other[p];
 };
 
-extend(exports, require('./core'));
-extend(exports, require('./node'));
-extend(exports, require('./filters'));
-extend(exports, require('./buffers'));
+extend(exports, require('./src/core'));
+extend(exports, require('./src/node'));
+extend(exports, require('./src/filters'));
+extend(exports, require('./src/buffers'));
 
-exports.rawFilters = require('./raw_filters');
+exports.rawFilters = require('./src/raw_filters');
