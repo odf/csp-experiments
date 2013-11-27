@@ -3,9 +3,11 @@
 var cc = require('./core');
 
 exports.source = function*(gen, outch, done) {
-  for (var val of gen)
-    if (!(yield cc.push(outch, val)))
+  for (;;) {
+    var step = gen.next();
+    if (step.done || !(yield cc.push(outch, step.value)))
       break;
+  }
   yield cc.push(done, true);
 };
 
