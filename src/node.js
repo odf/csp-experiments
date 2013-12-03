@@ -7,7 +7,7 @@ var apply = exports.apply = function(fn, context, args) {
   var ch = cc.chan(1);
 
   var callback = function(err, val) {
-    cc.pushImmediate(ch, err ? cc.rejected(new Error(err)) : cc.resolved(val));
+    cc.pushAsync(ch, err ? cc.rejected(new Error(err)) : cc.resolved(val));
   };
   fn.apply(context, args.concat(callback));
 

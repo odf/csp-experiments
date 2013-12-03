@@ -85,13 +85,12 @@ var push = exports.push = function(ch, val) {
   };
 };
 
-exports.pushImmediate = function(ch, val) {
-  if (val === undefined)
-    throw new Error("forced push requires an argument");
-  else if (ch.isClosed)
-    throw new Error("forced push to closed channel");
-  else if (!ch.buffer.tryToPush(val))
-    throw new Error("forced push failed");
+exports.pushAsync = function(ch, val, cb) {
+  cc.go(function*() {
+    yield push(ch, val);
+    if (cb)
+      cb();
+  });
 };
 
 var pull = exports.pull = function(ch) {
@@ -104,14 +103,6 @@ var pull = exports.pull = function(ch) {
     else
       return unresolved;
   };
-};
-
-exports.pullImmediate = function(ch) {
-  var res = ch.buffer.tryToPull();
-  if (res.length > 0)
-    return res[0];
-  else
-    throw new Error("forced pull failed");
 };
 
 var close = exports.close = function(ch) {
