@@ -40,7 +40,7 @@ var go_ = function(machine, step) {
   }
 };
 
-exports.go = function(machine) {
+var go = exports.go = function(machine) {
   var args = Array.prototype.slice.call(arguments, 1);
   var gen = machine.apply(undefined, args);
   go_(gen, gen.next());
@@ -86,11 +86,18 @@ var push = exports.push = function(ch, val) {
 };
 
 exports.pushAsync = function(ch, val, cb) {
-  cc.go(function*() {
-    yield push(ch, val);
+  try {
+    go(function*() {
+      yield push(ch, val);
+      if (cb)
+        cb(null);
+    });
+  } catch (err) {
     if (cb)
-      cb();
-  });
+      cb(err);
+    else
+      throw new Error(err);
+  }
 };
 
 var pull = exports.pull = function(ch) {

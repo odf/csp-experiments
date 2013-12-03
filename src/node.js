@@ -29,11 +29,7 @@ exports.fromStream = function(stream, outch, keepOpen)
 {
   var ch = outch || cc.chan();
 
-  stream.on('data', function(chunk) {
-    cc.go(function*() {
-      yield cc.push(ch, chunk);
-    });
-  });
+  stream.on('data', cc.pushAsync.bind(null, ch));
 
   stream.on('end', function() {
     if (!keepOpen)
