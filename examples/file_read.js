@@ -3,9 +3,8 @@
 var fs = require('fs');
 var cc = require('../index');
 
-cc.go(function* () {
-  var path = process.argv[2];
-  var options = { encoding: 'utf8' };
+var readFile = cc.bind(fs.readFile, fs);
 
-  console.log(yield cc.call(fs.readFile, fs, path, options));
+cc.go(function* () {
+  console.log(yield readFile(process.argv[2], { encoding: 'utf8' }));
 });
