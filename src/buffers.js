@@ -37,11 +37,11 @@ var Buffer = exports.Buffer = function Buffer(size) {
   this.buffer = new RingBuffer(size);
 };
 
-Buffer.prototype.pushCanFail = function() {
+Buffer.prototype.canBlock = function() {
   return true;
 };
 
-Buffer.prototype.tryToPush = function(val) {
+Buffer.prototype.push = function(val) {
   if (this.buffer.isFull())
     return false;
   else {
@@ -50,7 +50,7 @@ Buffer.prototype.tryToPush = function(val) {
   }
 };
 
-Buffer.prototype.tryToPull = function() {
+Buffer.prototype.pull = function() {
   if (this.buffer.isEmpty())
     return [];
   else
@@ -62,17 +62,17 @@ var DroppingBuffer = exports.DroppingBuffer = function DroppingBuffer(size) {
   this.buffer = new RingBuffer(size);
 };
 
-DroppingBuffer.prototype.pushCanFail = function() {
+DroppingBuffer.prototype.canBlock = function() {
   return false;
 };
 
-DroppingBuffer.prototype.tryToPush = function(val) {
+DroppingBuffer.prototype.push = function(val) {
   if (!this.buffer.isFull())
     this.buffer.write(val);
   return true;
 };
 
-DroppingBuffer.prototype.tryToPull = function() {
+DroppingBuffer.prototype.pull = function() {
   if (this.buffer.isEmpty())
     return [];
   else
@@ -84,16 +84,16 @@ var SlidingBuffer = exports.SlidingBuffer = function SlidingBuffer(size) {
   this.buffer = new RingBuffer(size);
 };
 
-SlidingBuffer.prototype.pushCanFail = function() {
+SlidingBuffer.prototype.canBlock = function() {
   return false;
 };
 
-SlidingBuffer.prototype.tryToPush = function(val) {
+SlidingBuffer.prototype.push = function(val) {
   this.buffer.write(val);
   return true;
 };
 
-SlidingBuffer.prototype.tryToPull = function() {
+SlidingBuffer.prototype.pull = function() {
   if (this.buffer.isEmpty())
     return [];
   else
@@ -107,11 +107,11 @@ var Unbuffer = exports.Unbuffer = function Unbuffer() {
   this.value = null;
 };
 
-Unbuffer.prototype.pushCanFail = function() {
+Unbuffer.prototype.canBlock = function() {
   return true;
 };
 
-Unbuffer.prototype.tryToPush = function(val) {
+Unbuffer.prototype.push = function(val) {
   if (this.pullPending) {
     this.pullPending = false;
     this.hasValue = true;
@@ -122,7 +122,7 @@ Unbuffer.prototype.tryToPush = function(val) {
   }
 };
 
-Unbuffer.prototype.tryToPull = function() {
+Unbuffer.prototype.pull = function() {
   if (this.hasValue) {
     this.pullPending = false;
     this.hasValue = false;
@@ -135,7 +135,7 @@ Unbuffer.prototype.tryToPull = function() {
 
 
 exports.nullBuffer = {
-  pushCanFail: function() { return false; },
-  tryToPush  : function() { return true; },
-  tryToPull  : function() { return []; }
+  canBlock: function() { return false; },
+  push    : function() { return true; },
+  pull    : function() { return []; }
 };

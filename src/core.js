@@ -67,7 +67,9 @@ var chan = exports.chan = function(arg) {
     buffer = new cb.Buffer(arg || 1);
 
   return {
-    buffer: buffer,
+    push    : buffer.push.bind(buffer),
+    pull    : buffer.pull.bind(buffer),
+    canBlock: buffer.canBlock.bind(buffer),
     isClosed: false
   };
 };
@@ -78,7 +80,7 @@ var push = exports.push = function(ch, val) {
       return rejected(new Error("push() requires an argument"));
     else if (ch.isClosed)
       return resolved(false);
-    else if(ch.buffer.tryToPush(val))
+    else if(ch.push(val))
       return resolved(true);
     else
       return unresolved;
@@ -102,7 +104,7 @@ exports.pushAsync = function(ch, val, cb) {
 
 var pull = exports.pull = function(ch) {
   return function() {
-    var res = ch.buffer.tryToPull();
+    var res = ch.pull();
     if (res.length > 0)
       return resolved(res[0]);
     else if (ch.isClosed)
