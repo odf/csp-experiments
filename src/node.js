@@ -4,7 +4,7 @@ var cc = require('./core');
 
 
 var apply = exports.apply = function(fn, context, args) {
-  var ch = cc.chan(1);
+  var ch = cc.chan();
 
   var callback = function(err, val) {
     cc.pushAsync(ch, err ? cc.rejected(new Error(err)) : cc.resolved(val));
