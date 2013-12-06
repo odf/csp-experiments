@@ -72,6 +72,10 @@ exports.dropWhile = function(pred, ch, options) {
   return pipe(cf.dropWhile, pred, ch, options || {});
 };
 
+exports.dropWhileOpen = function(ctrlch, inch, options) {
+  return pipe(cf.dropWhileOpen, ctrlch, inch, options || {});
+};
+
 exports.merge = function(chs, options) {
   return pipe(cf.merge, chs, options || {});
 };
