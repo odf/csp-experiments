@@ -46,6 +46,14 @@ exports.takeWhile = function*(pred, inch, outch, done) {
   yield cc.push(done, true);
 };
 
+exports.takeWhileOpen = function*(ctrlch, inch, outch, done) {
+  var val;
+  while((val = (yield cc.select([ctrlch, inch])).value) !== undefined)
+    if (!(yield cc.push(outch, val)))
+      break;
+  yield cc.push(done, true);
+};
+
 exports.drop = function*(n, inch, outch, done) {
   var val, i = 0;
   while((val = yield cc.pull(inch)) !== undefined) {
@@ -78,14 +86,6 @@ exports.merge = function*(inchs, outch, done) {
       if (!(yield cc.push(outch, res.value)))
         break;
   }
-  yield cc.push(done, true);
-};
-
-exports.croppedMerge = function*(inchs, outch, done) {
-  var val;
-  while ((val = (yield cc.select(inchs)).value) !== undefined)
-    if (!(yield cc.push(outch, val)))
-      break;
   yield cc.push(done, true);
 };
 

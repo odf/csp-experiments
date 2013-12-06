@@ -40,4 +40,4 @@ var t = cc.timeout(100);
 
 cc.each(console.log,
         cc.take(n, cc.dropWhile(function(p) { return p < start; },
-                                cc.croppedMerge([primes, t]))));
+                                cc.takeWhileOpen(t, primes))));

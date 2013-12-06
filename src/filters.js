@@ -60,6 +60,10 @@ exports.takeWhile = function(pred, ch, options) {
   return pipe(cf.takeWhile, pred, ch, options || {});
 };
 
+exports.takeWhileOpen = function(ctrlch, inch, options) {
+  return pipe(cf.takeWhileOpen, ctrlch, inch, options || {});
+};
+
 exports.drop = function(n, ch, options) {
   return pipe(cf.drop, n, ch, options || {});
 };
@@ -70,10 +74,6 @@ exports.dropWhile = function(pred, ch, options) {
 
 exports.merge = function(chs, options) {
   return pipe(cf.merge, chs, options || {});
-};
-
-exports.croppedMerge = function(chs, options) {
-  return pipe(cf.croppedMerge, chs, options || {});
 };
 
 exports.combine = function(chs, options) {
