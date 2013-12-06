@@ -54,26 +54,19 @@ exports.takeWhileOpen = function*(ctrlch, inch, outch, done) {
   yield cc.push(done, true);
 };
 
-exports.drop = function*(n, inch, outch, done) {
-  var val, i = 0;
-  while((val = yield cc.pull(inch)) !== undefined) {
-    if (i < n)
-      i += 1;
-    else if (!(yield cc.push(outch, val)))
-      break;
-  }
-  yield cc.push(done, true);
+var rest = function(taker) {
+  return function*(arg, inch, outch, done) {
+    var sink = cc.chan(0);
+    var sunk = cc.chan();
+    cc.go(taker, arg, inch, sink, sunk);
+    yield cc.pull(sunk);
+    cc.go(exports.map, function(x) { return x; }, inch, outch, done);
+  };
 };
 
-exports.dropWhile = function*(pred, inch, outch, done) {
-  var val, go = false;
-  while((val = yield cc.pull(inch)) !== undefined) {
-    go = go || !pred(val);
-    if (go && !(yield cc.push(outch, val)))
-      break;
-  }
-  yield cc.push(done, true);
-};
+exports.drop = rest(exports.take);
+exports.dropWhile = rest(exports.takeWhile);
+exports.dropWhileOpen = rest(exports.takeWhileOpen);
 
 exports.merge = function*(inchs, outch, done) {
   var active = inchs.slice();
