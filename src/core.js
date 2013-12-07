@@ -1,7 +1,6 @@
 'use strict';
 
-require('setimmediate');
-
+var async = require('./async');
 var cb = require('./buffers');
 
 
@@ -28,7 +27,7 @@ var go_ = function(machine, step) {
     case "error":
       machine.throw(res.value);
     case "park":
-      setImmediate(function() { go_(machine, step); });
+      async(function() { go_(machine, step); });
       return;
     case "continue":
       step = machine.next(res.value);
