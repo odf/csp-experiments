@@ -24,18 +24,22 @@ var makeChannels = function() {
 };
 
 cc.go(function*() {
-  var done;
-
-  done = cc.each(console.log, cc.take(30, cc.merge(makeChannels())));
-  yield cc.pull(done);
-
-  console.log();
-
-  done = cc.each(console.log, cc.take(20, cc.combine(makeChannels())));
-  yield cc.pull(done);
+  yield cc.chain(cc.merge(makeChannels()),
+                 [cc.take, 30],
+                 [cc.each, console.log],
+                 cc.pull);
 
   console.log();
 
-  done = cc.each(console.log, cc.take(20, cc.zip(makeChannels())));
-  yield cc.pull(done);
+  yield cc.chain(cc.combine(makeChannels()),
+                 [cc.take, 20],
+                 [cc.each, console.log],
+                 cc.pull);
+
+  console.log();
+
+  yield cc.chain(cc.zip(makeChannels()),
+                 [cc.take, 20],
+                 [cc.each, console.log],
+                 cc.pull);
 });

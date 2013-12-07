@@ -106,3 +106,14 @@ exports.each = function(fn, ch, options) {
 
   return done;
 };
+
+exports.chain = function(arg) {
+  var val = arg;
+  Array.prototype.slice.call(arguments, 1).forEach(function(form) {
+    if (Array.isArray(form))
+      val = form[0].apply(null, form.slice(1).concat([val]));
+    else
+      val = form(val);
+  });
+  return val;
+};

@@ -15,7 +15,10 @@ var run = function(buffer) {
     cc.close(ch);
   });
 
-  return cc.pull(cc.each(console.log, cc.take(20, ch)));
+  return cc.chain(ch,
+                  [cc.take, 20],
+                  [cc.each, console.log],
+                  cc.pull);
 };
 
 cc.go(function*() {

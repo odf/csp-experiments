@@ -30,14 +30,16 @@ var sieve = function*(outch, done) {
   yield cc.push(done, true);
 };
 
+var lessThan = function(n) {
+  return function(m) {
+    return m < n;
+  }
+};
 
 var n = parseInt(process.argv[2] || "50");
 var start = parseInt(process.argv[3] || "2");
 
-var primes = cc.pipe(sieve, [], false);
-
-var t = cc.timeout(100);
-
-cc.each(console.log,
-        cc.take(n, cc.dropWhile(function(p) { return p < start; },
-                                cc.takeWhileOpen(t, primes))));
+cc.chain(cc.pipe(sieve, [], false),
+         [cc.dropWhile, lessThan(start)],
+         [cc.take, n],
+         [cc.each, console.log]);
