@@ -20,28 +20,26 @@ var isResolved = exports.isResolved = function(res) {
 };
 
 
-var mq = new cb.RingBuffer(100);
-var sq = new cb.RingBuffer(100);
+var queue = new cb.RingBuffer(100);
 var scheduleFlush = true;
 
 var flush = function() {
   scheduleFlush = true;
-  var n = mq.count();
+  var n = queue.count() / 2;
   for (var i = 0; i < n; ++i) {
-    var m = mq.read();
-    var s = sq.read();
+    var m = queue.read();
+    var s = queue.read();
     go_(m, s);
   }
 };
 
 var enqueue = function(machine, step) {
-  if (mq.isFull()) {
-    var n = Math.floor(mq.capacity() * 1.5);
-    mq.resize(n);
-    sq.resize(n);
+  if (queue.isFull()) {
+    var n = Math.floor(queue.capacity() * 1.5);
+    queue.resize(n + n % 2); // resize to the next even length
   }
-  mq.write(machine);
-  sq.write(step);
+  queue.write(machine);
+  queue.write(step);
   if (scheduleFlush) {
     setImmediate(flush);
     scheduleFlush = false;
