@@ -20,21 +20,32 @@ var isResolved = exports.isResolved = function(res) {
 };
 
 
-var queue = [];
+var mq = new cb.RingBuffer(100);
+var sq = new cb.RingBuffer(100);
+var scheduleFlush = true;
 
 var flush = function() {
-  var todo = queue.slice();
-  queue = [];
-  while (todo.length > 0) {
-    var entry = todo.shift();
-    go_(entry[0], entry[1]);
+  scheduleFlush = true;
+  var n = mq.count();
+  for (var i = 0; i < n; ++i) {
+    var m = mq.read();
+    var s = sq.read();
+    go_(m, s);
   }
 };
 
 var enqueue = function(machine, step) {
-  queue.push([machine, step]);
-  if (queue.length == 1)
+  if (mq.isFull()) {
+    var n = Math.floor(mq.capacity() * 1.5);
+    mq.resize(n);
+    sq.resize(n);
+  }
+  mq.write(machine);
+  sq.write(step);
+  if (scheduleFlush) {
     setImmediate(flush);
+    scheduleFlush = false;
+  }
 };
 
 
