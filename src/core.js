@@ -1,6 +1,7 @@
 'use strict';
 
-var async = require('./async');
+require('setimmediate');
+
 var cb = require('./buffers');
 
 
@@ -19,6 +20,24 @@ var isResolved = exports.isResolved = function(res) {
 };
 
 
+var queue = [];
+
+var flush = function() {
+  var todo = queue.slice();
+  queue = [];
+  while (todo.length > 0) {
+    var entry = todo.shift();
+    go_(entry[0], entry[1]);
+  }
+};
+
+var enqueue = function(machine, step) {
+  queue.push([machine, step]);
+  if (queue.length == 1)
+    setImmediate(flush);
+};
+
+
 var go_ = function(machine, step) {
   while(!step.done) {
     var res = step.value();
@@ -27,7 +46,7 @@ var go_ = function(machine, step) {
     case "error":
       machine.throw(res.value);
     case "park":
-      async(function() { go_(machine, step); });
+      enqueue(machine, step);
       return;
     case "continue":
       step = machine.next(res.value);
