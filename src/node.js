@@ -1,13 +1,14 @@
 'use strict';
 
-var cc = require('./core');
+var cr = require('./core');
+var cc = require('./channels');
 
 
 var apply = exports.apply = function(fn, context, args) {
   var ch = cc.chan();
 
   var callback = function(err, val) {
-    cc.pushAsync(ch, err ? cc.rejected(new Error(err)) : cc.resolved(val));
+    cc.pushAsync(ch, err ? cr.rejected(new Error(err)) : cr.resolved(val));
   };
   fn.apply(context, args.concat(callback));
 

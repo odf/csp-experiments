@@ -1,6 +1,7 @@
 'use strict';
 
-var cc = require('./core');
+var go = require('./core').go;
+var cc = require('./channels');
 var cf = require('./raw_filters');
 
 
@@ -34,8 +35,8 @@ var pipe = exports.pipe = function()
   var outch = options.output || cc.chan();
   var done  = cc.chan();
 
-  cc.go.apply(this, [].concat(filter, args, wrapch(inch), wrapch(outch), done));
-  cc.go(sentinel, inch, outch, done, options);
+  go.apply(this, [].concat(filter, args, wrapch(inch), wrapch(outch), done));
+  go(sentinel, inch, outch, done, options);
 
   return outch;
 };
@@ -92,8 +93,8 @@ exports.scatter = function(preds, inch, options) {
   var outchs = preds.map(function () { return cc.chan(); });
   var done = cc.chan();
 
-  cc.go(cf.scatter, preds, inch, outchs, done);
-  cc.go(sentinel, inch, outchs, done, options || {});
+  go(cf.scatter, preds, inch, outchs, done);
+  go(sentinel, inch, outchs, done, options || {});
 
   return outchs;
 };
@@ -101,8 +102,8 @@ exports.scatter = function(preds, inch, options) {
 exports.each = function(fn, ch, options) {
   var done  = cc.chan();
 
-  cc.go(cf.each, fn, ch, done);
-  cc.go(sentinel, ch, done, done, options || {});
+  go(cf.each, fn, ch, done);
+  go(sentinel, ch, done, done, options || {});
 
   return done;
 };

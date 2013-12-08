@@ -1,6 +1,7 @@
 'use strict';
 
-var cc = require('./core');
+var go = require('./core').go;
+var cc = require('./channels');
 
 exports.source = function*(gen, outch, done) {
   for (;;) {
@@ -58,9 +59,9 @@ var rest = function(taker) {
   return function*(arg, inch, outch, done) {
     var sink = cc.chan(0);
     var sunk = cc.chan();
-    cc.go(taker, arg, inch, sink, sunk);
+    go(taker, arg, inch, sink, sunk);
     yield cc.pull(sunk);
-    cc.go(exports.map, function(x) { return x; }, inch, outch, done);
+    go(exports.map, function(x) { return x; }, inch, outch, done);
   };
 };
 
