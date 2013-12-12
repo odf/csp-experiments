@@ -2,11 +2,11 @@
 
 require('setimmediate');
 
-var cb = require('./buffers');
+var RingBuffer = require('./RingBuffer');
 
 
 var schedule = function() {
-  var queue = new cb.RingBuffer(100);
+  var queue = new RingBuffer(100);
   var scheduleFlush = true;
 
   var flush = function() {
