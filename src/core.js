@@ -5,21 +5,6 @@ require('setimmediate');
 var cb = require('./buffers');
 
 
-var unresolved = exports.unresolved = { state: "park" };
-
-var rejected = exports.rejected = function(err) {
-  return { state: "error", value: err };
-};
-
-var resolved = exports.resolved = function(val) {
-  return { state: "continue", value: val };
-};
-
-var isResolved = exports.isResolved = function(res) {
-  return res.state == 'continue';
-};
-
-
 var schedule = function() {
   var queue = new cb.RingBuffer(100);
   var scheduleFlush = true;
@@ -66,7 +51,16 @@ var go_ = function(machine, step) {
   }
 };
 
-var go = exports.go = function(machine) {
+
+exports.unresolved = { state: "park" };
+
+exports.rejected   = function(err) { return { state: "error", value: err }; };
+
+exports.resolved   = function(val) { return { state: "continue", value: val }; };
+
+exports.isResolved = function(res) { return res.state == 'continue'; };
+
+exports.go = function(machine) {
   var args = Array.prototype.slice.call(arguments, 1);
   var gen = machine.apply(undefined, args);
   go_(gen, gen.next());
