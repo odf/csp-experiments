@@ -62,9 +62,6 @@ var go_ = function(machine, step) {
     case "continue":
       step = machine.next(res.value);
       break;
-    case "pass":
-      setTimeout(function() { go_(machine, machine.next()); }, res.value);
-      return;
     }
   }
 };
@@ -73,11 +70,4 @@ var go = exports.go = function(machine) {
   var args = Array.prototype.slice.call(arguments, 1);
   var gen = machine.apply(undefined, args);
   go_(gen, gen.next());
-};
-
-
-exports.pass = function(milliseconds) {
-  return function() {
-    return { state: "pass", value: milliseconds || 0 };
-  };
 };

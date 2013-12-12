@@ -87,6 +87,11 @@ exports.timeout = function(ms) {
 };
 
 
+exports.pass = function(ms) {
+  return pull(exports.timeout(ms));
+};
+
+
 exports.select = function(ops, default_value) {
   return function() {
     for (var i = 0; i < ops.length; ++i) {
