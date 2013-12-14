@@ -101,14 +101,6 @@ exports.select = function(actions) {
 };
 
 
-exports.unwrap = function(action) {
-  return function() {
-    var res = action();
-    return cc.isResolved(res) ? cc.getValue(res) : res;
-  };
-};
-
-
 exports.constant = function(val) {
   return function() {
     return cc.resolved(val);

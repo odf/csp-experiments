@@ -5,14 +5,15 @@ var cc = require('./channels');
 
 
 var apply = exports.apply = function(fn, context, args) {
-  var ch = cc.chan();
+  var result = cr.unresolved;
 
-  var callback = function(err, val) {
-    cc.pushAsync(ch, err ? cr.rejected(new Error(err)) : cr.resolved(val));
+  fn.apply(context, args.concat(function(err, val) {
+    result = err ? cr.rejected(new Error(err)) : cr.resolved(val);
+  }));
+
+  return function() {
+    return result;
   };
-  fn.apply(context, args.concat(callback));
-
-  return cc.unwrap(cc.pull(ch));
 };
 
 
@@ -21,10 +22,12 @@ var call = exports.call = function(fn, context) {
   return apply(fn, context, args);
 };
 
+
 exports.bind = function(fn, context)
 {
   return call.bind(null, fn, context);
 };
+
 
 exports.fromStream = function(stream, outch, keepOpen)
 {
