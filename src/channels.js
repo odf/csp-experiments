@@ -67,39 +67,3 @@ exports.pull = function(ch) {
 exports.close = function(ch) {
   ch.isClosed = true;
 };
-
-
-// TODO all of the following should go into a separate file
-
-exports.pass = function(ms) {
-  var t;
-  var result = cc.unresolved;
-
-  t = setTimeout(function() {
-    clearTimeout(t);
-    result = cc.resolved();
-  }, ms);
-
-  return function() {
-    return result;
-  };
-};
-
-
-exports.select = function(actions) {
-  return function() {
-    for (var i = 0; i < actions.length; ++i) {
-      var res = actions[i]();
-      if (cc.isResolved(res))
-        return cc.resolved({ index: i, value: cc.getValue(res) });
-    }
-    return cc.unresolved;
-  }
-};
-
-
-exports.constant = function(val) {
-  return function() {
-    return cc.resolved(val);
-  };
-};

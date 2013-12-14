@@ -2,6 +2,7 @@
 
 var go = require('./core').go;
 var cc = require('./channels');
+var ca = require('./actions');
 
 exports.source = function*(gen, outch, done) {
   for (;;) {
@@ -48,9 +49,9 @@ exports.takeWhile = function*(pred, inch, outch, done) {
 };
 
 exports.takeWithTimeout = function*(ms, inch, outch, done) {
-  var actions = [cc.pass(ms), cc.pull(inch)];
+  var actions = [ca.pass(ms), cc.pull(inch)];
   var val;
-  while((val = (yield cc.select(actions)).value) !== undefined)
+  while((val = (yield ca.select(actions)).value) !== undefined)
     if (!(yield cc.push(outch, val)))
       break;
   yield cc.push(done, true);
@@ -74,7 +75,7 @@ exports.merge = function*(inchs, outch, done) {
   var active = inchs.map(cc.pull);
 
   while (active.length > 0) {
-    var res = yield cc.select(active);
+    var res = yield ca.select(active);
     if (res.value === undefined)
       active.splice(res.index, 1);
     else
@@ -95,7 +96,7 @@ exports.combine = function*(inchs, outch, done) {
   results = new Array(inchs.length);
 
   while (active.length > 0) {
-    res = yield cc.select(active);
+    res = yield ca.select(active);
     i = res.index;
 
     if (res.value === undefined) {
@@ -122,7 +123,7 @@ exports.zip = function*(inchs, outch, done) {
       indices.push(i);
 
     while (active.length > 0) {
-      res = yield cc.select(active);
+      res = yield ca.select(active);
 
       if (res.value === undefined) {
         results = null;
