@@ -73,18 +73,15 @@ exports.close = function(ch) {
 
 exports.pass = function(ms) {
   var t;
-  var done = false;
+  var result = cc.unresolved;
 
   t = setTimeout(function() {
     clearTimeout(t);
-    done = true;
+    result = cc.resolved();
   }, ms);
 
   return function() {
-    if (done)
-      return cc.resolved();
-    else
-      return cc.unresolved;
+    return result;
   };
 };
 
