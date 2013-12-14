@@ -20,8 +20,8 @@ var fizz     = cc.map(function() { return "fizz"; }, intermediates[1]);
 var buzz     = cc.map(function() { return "buzz"; }, intermediates[2]);
 var rest     = intermediates[3];
 
-var n = parseInt(process.argv[2] || "25");
+var ms = parseInt(process.argv[2] || "25");
 
 cc.chain(cc.merge([fizzbuzz, fizz, buzz, rest]),
-         [cc.takeWhileOpen, cc.timeout(n)],
+         [cc.takeWithTimeout, ms],
          [cc.each, console.log]);

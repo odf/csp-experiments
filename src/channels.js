@@ -4,7 +4,7 @@ var cc = require('./core');
 var cb = require('./buffers');
 
 
-var chan = exports.chan = function(arg) {
+exports.chan = function(arg) {
   var buffer;
 
   if (arg == undefined)
@@ -52,7 +52,7 @@ exports.pushAsync = function(ch, val, cb) {
   }
 };
 
-var pull = exports.pull = function(ch) {
+exports.pull = function(ch) {
   return function() {
     var res = ch.pull();
     if (res.length > 0)
@@ -64,31 +64,28 @@ var pull = exports.pull = function(ch) {
   };
 };
 
-var close = exports.close = function(ch) {
+exports.close = function(ch) {
   ch.isClosed = true;
-  if (ch.onClose)
-    ch.onClose();
 };
 
 
-exports.timeout = function(ms) {
-  var t;
-  var ch = chan(0);
-
-  ch.onClose = function() {
-    clearTimeout(t);
-  };
-
-  t = setTimeout(function() {
-    close(ch);
-  }, ms);
-
-  return ch;
-};
-
+// TODO all of the following should go into a separate file
 
 exports.pass = function(ms) {
-  return pull(exports.timeout(ms));
+  var t;
+  var done = false;
+
+  t = setTimeout(function() {
+    clearTimeout(t);
+    done = true;
+  }, ms);
+
+  return function() {
+    if (done)
+      return cc.resolved();
+    else
+      return cc.unresolved;
+  };
 };
 
 
