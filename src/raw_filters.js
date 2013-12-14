@@ -48,8 +48,9 @@ exports.takeWhile = function*(pred, inch, outch, done) {
 };
 
 exports.takeWhileOpen = function*(ctrlch, inch, outch, done) {
+  var actions = [ctrlch, inch].map(cc.pull);
   var val;
-  while((val = (yield cc.select([ctrlch, inch])).value) !== undefined)
+  while((val = (yield cc.select(actions)).value) !== undefined)
     if (!(yield cc.push(outch, val)))
       break;
   yield cc.push(done, true);
@@ -70,7 +71,7 @@ exports.dropWhile = rest(exports.takeWhile);
 exports.dropWhileOpen = rest(exports.takeWhileOpen);
 
 exports.merge = function*(inchs, outch, done) {
-  var active = inchs.slice();
+  var active = inchs.map(cc.pull);
 
   while (active.length > 0) {
     var res = yield cc.select(active);
@@ -86,7 +87,7 @@ exports.merge = function*(inchs, outch, done) {
 exports.combine = function*(inchs, outch, done) {
   var results, active, indices, i, res;
 
-  active  = inchs.slice();
+  active  = inchs.map(cc.pull);
   indices = []
   for (i = 0; i < inchs.length; ++i)
     indices.push(i);
@@ -115,7 +116,7 @@ exports.zip = function*(inchs, outch, done) {
   results = new Array(inchs.length);
 
   while (results !== null) {
-    active  = inchs.slice();
+    active  = inchs.map(cc.pull);
     indices = []
     for (i = 0; i < inchs.length; ++i)
       indices.push(i);

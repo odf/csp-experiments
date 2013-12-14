@@ -12,7 +12,7 @@ var apply = exports.apply = function(fn, context, args) {
   };
   fn.apply(context, args.concat(callback));
 
-  return cc.unwrap(ch);
+  return cc.unwrap(cc.pull(ch));
 };
 
 

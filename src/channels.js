@@ -92,25 +92,28 @@ exports.pass = function(ms) {
 };
 
 
-exports.select = function(ops, default_value) {
+exports.select = function(actions) {
   return function() {
-    for (var i = 0; i < ops.length; ++i) {
-      var op = ops[i];
-      var res = (Array.isArray(op)) ? push(op[0], op[1])() : pull(op)();
+    for (var i = 0; i < actions.length; ++i) {
+      var res = actions[i]();
       if (cc.isResolved(res))
         return cc.resolved({ index: i, value: cc.getValue(res) });
     }
-    if (default_value === undefined)
-      return cc.unresolved;
-    else
-      return cc.resolved(default_value);
+    return cc.unresolved;
   }
 };
 
 
-exports.unwrap = function(ch) {
+exports.unwrap = function(action) {
   return function() {
-    var res = pull(ch)();
+    var res = action();
     return cc.isResolved(res) ? cc.getValue(res) : res;
+  };
+};
+
+
+exports.constant = function(val) {
+  return function() {
+    return cc.resolved(val);
   };
 };
