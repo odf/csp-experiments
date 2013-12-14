@@ -38,27 +38,32 @@ var go_ = function(machine, step) {
   while(!step.done) {
     var res = step.value();
 
-    switch (res.state) {
-    case "error":
-      machine.throw(res.value);
-    case "park":
+    switch (res[0]) {
+    case 'error':
+      machine.throw(res[1]);
+    case 'park':
       schedule(machine, step);
       return;
-    case "continue":
-      step = machine.next(res.value);
+    case 'continue':
+      step = machine.next(res[1]);
       break;
     }
   }
 };
 
 
-exports.unresolved = { state: "park" };
+exports.unresolved = [ 'park' ];
 
-exports.rejected   = function(err) { return { state: "error", value: err }; };
+exports.rejected   = function(err) { return [ 'error', err ]; };
 
-exports.resolved   = function(val) { return { state: "continue", value: val }; };
+exports.resolved   = function(val) { return [ 'continue', val ]; };
 
-exports.isResolved = function(res) { return res.state == 'continue'; };
+exports.isResolved = function(res) { return res[0] === 'continue'; };
+
+exports.getValue   = function(res) {
+  if (exports.isResolved(res))
+    return res[1];
+};
 
 exports.go = function(machine) {
   var args = Array.prototype.slice.call(arguments, 1);

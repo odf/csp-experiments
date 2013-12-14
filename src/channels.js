@@ -98,7 +98,7 @@ exports.select = function(ops, default_value) {
       var op = ops[i];
       var res = (Array.isArray(op)) ? push(op[0], op[1])() : pull(op)();
       if (cc.isResolved(res))
-        return cc.resolved({ index: i, value: res.value });
+        return cc.resolved({ index: i, value: cc.getValue(res) });
     }
     if (default_value === undefined)
       return cc.unresolved;
@@ -111,6 +111,6 @@ exports.select = function(ops, default_value) {
 exports.unwrap = function(ch) {
   return function() {
     var res = pull(ch)();
-    return cc.isResolved(res) ? res.value : res;
+    return cc.isResolved(res) ? cc.getValue(res) : res;
   };
 };
