@@ -10,7 +10,7 @@ var run = function(buffer) {
       if (!(yield cc.push(ch, i)))
         break;
       if (i % 10 == 0)
-        yield cc.pass();
+        yield cc.sleep();
     }
     cc.close(ch);
   });

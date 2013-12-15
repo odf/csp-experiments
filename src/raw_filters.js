@@ -41,7 +41,7 @@ exports.take = function*(n, inch, outch, done) {
 };
 
 exports.takeWithTimeout = function*(ms, inch, outch, done) {
-  var actions = [ca.pass(ms), cc.pull(inch)];
+  var actions = [ca.sleep(ms), cc.pull(inch)];
   var val;
   while((val = (yield ca.select(actions)).value) !== undefined)
     if (!(yield cc.push(outch, val)))

@@ -34,12 +34,12 @@ exports.select = function(actions) {
     machines = [];
   };
 
-  var runner = function(target, source) {
+  var runner = function(target, index) {
     return function*() {
       try {
-        var val = yield source;
+        var val = yield actions[index];
         cancel();
-        target.resolve(val);
+        target.resolve({ index: index, value: val });
       } catch (err) {
         cancel();
         target.reject(err);
@@ -49,9 +49,8 @@ exports.select = function(actions) {
 
   return new cc.Action({
     run: function(self) {
-      machines = actions.map(function(a) {
-        return cc.go(runner(self, a));
-      });
+      for (var i = 0; i < n; ++i)
+        machines.push(cc.go(runner(self, i)));
     },
     cancel    : cancel,
     repeatable: true

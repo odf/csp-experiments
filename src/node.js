@@ -5,15 +5,16 @@ var cc = require('./channels');
 
 
 var apply = exports.apply = function(fn, context, args) {
-  var result = cr.unresolved;
+  var result = new cr.Action();
 
   fn.apply(context, args.concat(function(err, val) {
-    result = err ? cr.rejected(new Error(err)) : cr.resolved(val);
+    if (err)
+      result.reject(new Error(err));
+    else
+      result.resolve(val);
   }));
 
-  return function() {
-    return result;
-  };
+  return result;
 };
 
 
@@ -33,7 +34,11 @@ exports.fromStream = function(stream, outch, keepOpen)
 {
   var ch = outch || cc.chan();
 
-  stream.on('data', cc.pushAsync.bind(null, ch));
+  stream.on('data', function(data) {
+    cr.go(function*() {
+      yield cc.push(ch, data);
+    });
+  });
 
   stream.on('end', function() {
     if (!keepOpen)

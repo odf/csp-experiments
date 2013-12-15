@@ -2,5 +2,7 @@
 
 var cc = require('../index');
 
-cc.pushAsync(cc.chan());
+cc.go(function*() {
+  yield cc.push(cc.chan());
+});
 

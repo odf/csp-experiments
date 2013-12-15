@@ -6,7 +6,7 @@ var source = function(x) {
   var ch = cc.chan();
   cc.go(function*() {
     for (var i = 0; ; ++i) {
-      yield cc.pass(Math.random() * 100);
+      yield cc.sleep(Math.random() * 100);
       if (!(yield cc.push(ch, "" + x + "." + i)))
         break;
     }
