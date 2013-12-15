@@ -4,6 +4,81 @@ var cc = require('./core');
 var cb = require('./buffers');
 
 
+function Channel(buffer) {
+  this.buffer = buffer;
+  this.pushers = [];
+  this.values  = [];
+  this.pullers = [];
+  this.isClosed = false;
+};
+
+Channel.prototype.requestPush = function(val, client) {
+  if (val === undefined)
+    client.reject(new Error("push() requires an argument"));
+  else if (this.isClosed)
+    client.resolve(false);
+  else if (this.buffer.push(val))
+    client.resolve(true);
+  else {
+    this.pushers.push(client);
+    this.values.push(val);
+  }
+
+  this.tryNextPull();
+};
+
+Channel.prototype.tryNextPush = function() {
+  if (this.pushers.length > 0 && this.buffer.push(this.values[0])) {
+    this.pushers.shift().resolve(true);
+    this.values.shift();
+    this.tryNextPull();
+  }
+};
+
+Channel.prototype.cancelPush = function(client) {
+  var i = this.pushers.indexOf(client);
+  if (i >= 0) {
+    this.pushers.splice(i, 1);
+    this.values.splice(i, 1);
+  }
+};
+
+Channel.prototype.requestPull = function(client) {
+  var res = this.buffer.pull();
+  if (res.length > 0)
+    client.resolve(res[0]);
+  else if (this.isClosed)
+    client.resolve();
+  else
+    this.pullers.push(client);
+
+  this.tryNextPush();
+};
+
+Channel.prototype.tryNextPull = function() {
+  if (this.pullers.length > 0) {
+    var res = this.buffer.pull();
+    if (res.length > 0) {
+      this.pullers.shift().resolve(res[0]);
+      this.tryNextPush();
+    }
+  }
+};
+
+Channel.prototype.cancelPull = function(client) {
+  var i = this.pullers.indexOf(client);
+  if (i >= 0)
+    this.pullers.splice(i, 1);
+};
+
+Channel.prototype.close = function() {
+  while (this.pullers.length > 0)
+    this.pullers.shift().resolve();
+  while (this.pushers.length > 0)
+    this.pushers.shift().resolve(false);
+};
+
+
 exports.chan = function(arg) {
   var buffer;
 
@@ -16,54 +91,33 @@ exports.chan = function(arg) {
   else
     buffer = new cb.Buffer(arg || 1);
 
-  return {
-    push    : buffer.push.bind(buffer),
-    pull    : buffer.pull.bind(buffer),
-    canBlock: buffer.canBlock.bind(buffer),
-    isClosed: false
-  };
+  return new Channel(buffer);
 };
 
-var push = exports.push = function(ch, val) {
-  return function() {
-    if (val === undefined)
-      return cc.rejected(new Error("push() requires an argument"));
-    else if (ch.isClosed)
-      return cc.resolved(false);
-    else if(ch.push(val))
-      return cc.resolved(true);
-    else
-      return cc.unresolved;
-  };
-};
-
-exports.pushAsync = function(ch, val, cb) {
-  try {
-    cc.go(function*() {
-      yield push(ch, val);
-      if (cb)
-        cb(null);
-    });
-  } catch (err) {
-    if (cb)
-      cb(err);
-    else
-      throw new Error(err);
-  }
+exports.push = function(ch, val) {
+  return new cc.Action({
+    run: function(self) {
+      ch.requestPush(val, self);
+    },
+    cancel: function(self) {
+      ch.cancelPush(self);
+    },
+    repeatable: true
+  });
 };
 
 exports.pull = function(ch) {
-  return function() {
-    var res = ch.pull();
-    if (res.length > 0)
-      return cc.resolved(res[0]);
-    else if (ch.isClosed)
-      return cc.resolved();
-    else
-      return cc.unresolved;
-  };
+  return new cc.Action({
+    run: function(self) {
+      ch.requestPull(self);
+    },
+    cancel: function(self) {
+      ch.cancelPull(self);
+    },
+    repeatable: true
+  });
 };
 
 exports.close = function(ch) {
-  ch.isClosed = true;
+  ch.close();
 };

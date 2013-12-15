@@ -71,19 +71,3 @@ exports.fail = function(val) {
   result.reject(new Error(val));
   return result;
 };
-
-
-cc.go(function*() {
-  var wait = exports.sleep(1000);
-
-  yield wait;
-  console.log(yield exports.succeed(1));
-  yield wait;
-  console.log(yield exports.succeed(2));
-  yield wait;
-  console.log(yield exports.select([
-    exports.succeed(4),
-    exports.succeed(3),
-    exports.sleep(10000)
-  ]));
-});

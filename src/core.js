@@ -51,16 +51,16 @@ Action.prototype.publish = function(subscriber) {
 };
 
 Action.prototype.subscribe = function(machine) {
+  if (this.state == REJECTED || this.state == RESOLVED)
+    this.publish(machine);
+  else
+    this.subscribers.push(machine);
+
   if (this.state == IDLE) {
+    this.state = UNRESOLVED;
     if (typeof this.options.run == 'function')
       this.options.run(this);
-    this.state = UNRESOLVED;
   }
-
-  if (this.state == UNRESOLVED)
-    this.subscribers.push(machine);
-  else
-    this.publish(machine);
 }
 
 Action.prototype.unsubscribe = function(machine) {
