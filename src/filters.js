@@ -57,8 +57,8 @@ exports.take = function(n, ch, options) {
   return pipe(cf.take, n, ch, options || {});
 };
 
-exports.takeWhile = function(pred, ch, options) {
-  return pipe(cf.takeWhile, pred, ch, options || {});
+exports.takeUntil = function(pred, ch, options) {
+  return pipe(cf.takeUntil, pred, ch, options || {});
 };
 
 exports.takeWithTimeout = function(ms, inch, options) {

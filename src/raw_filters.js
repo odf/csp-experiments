@@ -40,14 +40,6 @@ exports.take = function*(n, inch, outch, done) {
   yield cc.push(done, true);
 };
 
-exports.takeWhile = function*(pred, inch, outch, done) {
-  var val;
-  while((val = yield cc.pull(inch)) !== undefined)
-    if (!pred(val) || !(yield cc.push(outch, val)))
-      break;
-  yield cc.push(done, true);
-};
-
 exports.takeWithTimeout = function*(ms, inch, outch, done) {
   var actions = [ca.pass(ms), cc.pull(inch)];
   var val;
@@ -68,8 +60,26 @@ var rest = function(taker) {
 };
 
 exports.drop = rest(exports.take);
-exports.dropWhile = rest(exports.takeWhile);
 exports.dropWithTimeout = rest(exports.takeWithTimeout);
+
+exports.takeUntil = function*(pred, inch, outch, done) {
+  var val;
+  while((val = yield cc.pull(inch)) !== undefined)
+    if (!(yield cc.push(outch, val)) || pred(val))
+      break;
+  yield cc.push(done, true);
+};
+
+exports.dropWhile = function*(pred, inch, outch, done) {
+  var val;
+  var go = false;
+  while((val = yield cc.pull(inch)) !== undefined) {
+    go = go || !pred(val);
+    if (go && !(yield cc.push(outch, val)))
+      break;
+  }
+  yield cc.push(done, true);
+};
 
 exports.merge = function*(inchs, outch, done) {
   var active = inchs.map(cc.pull);
