@@ -17,7 +17,7 @@ for (i = 2; ; ++i) {
   }
   if (good) {
     primes.push(i);
-    if (count > n)
+    if (count >= n)
       break;
     else if (i >= start) {
       console.log(i);
