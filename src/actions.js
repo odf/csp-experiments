@@ -4,23 +4,12 @@ var cc = require('./core');
 
 
 exports.sleep = function(ms) {
-  var t;
-
-  var cancel = function(a) {
+  var result = new cc.Action();
+  var t = setTimeout(function() {
     clearTimeout(t);
-  };
-
-  return new cc.Action({
-    run: function(a) {
-      t = setTimeout(function() {
-        cancel();
-        a.resolve();
-      }, ms);
-    },
-
-    cancel    : cancel,
-    repeatable: true
-  });
+    result.resolve();
+  }, ms);
+  return result;
 };
 
 
