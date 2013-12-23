@@ -4,15 +4,13 @@ var cc = require('../index');
 
 var run = function(buffer) {
   var ch = cc.chan(buffer);
-  var dummy = cc.chan();
-  dummy.close();
 
   cc.go(function*() {
     for (var i = 1; ; ++i) {
       if (!(yield cc.push(ch, i)))
         break;
       if (i % 10 == 0)
-        yield cc.pull(dummy);;
+        yield null;
     }
     cc.close(ch);
   });

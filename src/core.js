@@ -81,8 +81,12 @@ var next = function(machine, state, value) {
   else
     step = machine['throw'](value);
 
-  if (!step.done)
-    step.value.subscribe(machine);
+  if (!step.done) {
+    if (!!(step.value) && step.value.constructor == Action)
+      step.value.subscribe(machine);
+    else
+      schedule(machine, RESOLVED, step.value);
+  }
 };
 
 
