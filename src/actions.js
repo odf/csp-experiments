@@ -1,15 +1,16 @@
 'use strict';
 
 var cc = require('./core');
+var channels = require('./channels');
 
 
-exports.sleep = function(ms) {
-  var result = new cc.Action();
+exports.timeout = function(ms) {
+  var ch = channels.chan();
   var t = setTimeout(function() {
     clearTimeout(t);
-    result.resolve();
+    ch.close();
   }, ms);
-  return result;
+  return ch;
 };
 
 
@@ -44,18 +45,4 @@ exports.select = function(actions) {
     cancel    : cancel,
     repeatable: true
   });
-};
-
-
-exports.succeed = function(val) {
-  var result = new cc.Action();
-  result.resolve(val);
-  return result;
-};
-
-
-exports.fail = function(val) {
-  var result = new cc.Action();
-  result.reject(new Error(val));
-  return result;
 };

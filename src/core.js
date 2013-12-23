@@ -39,10 +39,9 @@ const REJECTED   = 2;
 const IDLE       = 3;
 
 
-function Action(options) {
-  this.options = options || {};
+function Action() {
   this.subscribers = [];
-  this.state = IDLE;
+  this.state = UNRESOLVED;
   this.value = undefined;
 };
 
@@ -51,45 +50,27 @@ Action.prototype.publish = function(subscriber) {
 };
 
 Action.prototype.subscribe = function(machine) {
-  if (this.state == REJECTED || this.state == RESOLVED)
+  if (this.state != UNRESOLVED)
     this.publish(machine);
   else
     this.subscribers.push(machine);
-
-  if (this.state == IDLE) {
-    this.state = UNRESOLVED;
-    if (typeof this.options.run == 'function')
-      this.options.run(this);
-  }
 }
 
 Action.prototype.unsubscribe = function(machine) {
   var i = this.subscribers.indexOf(machine);
   if (i >= 0)
     this.subscribers.splice(i, 1);
-
-  if (this.subscribers.length == 0
-      && typeof this.options.cancel == 'function') {
-    this.options.cancel(this);
-    this.state = IDLE;
-  }
 };
 
 Action.prototype.update = function(state, val) {
-  if (this.state == RESOLVED || this.state == REJECTED)
+  if (this.state != UNRESOLVED)
     throw new Error("action is already resolved");
 
   this.state = state;
   this.value = val;
 
-  var n = this.subscribers.length;
-  var m = this.options.multiplexed ? n : Math.min(n, 1);
-
-  for (var i = 0; i < m; ++i)
+  if (this.subscribers.length > 0)
     this.publish(this.subscribers.shift());
-
-  if (this.options.repeatable)
-    this.state = IDLE;
 };
 
 Action.prototype.resolve = function(val) {
