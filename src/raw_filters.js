@@ -81,10 +81,10 @@ exports.dropWhile = function*(pred, inch, outch, done) {
 };
 
 exports.merge = function*(inchs, outch, done) {
-  var active = inchs.map(cc.pull);
+  var active = inchs.slice();
 
   while (active.length > 0) {
-    var res = yield ca.select(active);
+    var res = yield cc.select.apply(null, active);
     if (res.value === undefined)
       active.splice(res.index, 1);
     else
@@ -97,7 +97,7 @@ exports.merge = function*(inchs, outch, done) {
 exports.combine = function*(inchs, outch, done) {
   var results, active, indices, i, res;
 
-  active  = inchs.map(cc.pull);
+  active  = inchs.slice();
   indices = []
   for (i = 0; i < inchs.length; ++i)
     indices.push(i);
@@ -105,7 +105,7 @@ exports.combine = function*(inchs, outch, done) {
   results = new Array(inchs.length);
 
   while (active.length > 0) {
-    res = yield ca.select(active);
+    res = yield cc.select.apply(null, active);
     i = res.index;
 
     if (res.value === undefined) {
@@ -126,13 +126,13 @@ exports.zip = function*(inchs, outch, done) {
   results = new Array(inchs.length);
 
   while (results !== null) {
-    active  = inchs.map(cc.pull);
+    active  = inchs.slice();
     indices = []
     for (i = 0; i < inchs.length; ++i)
       indices.push(i);
 
     while (active.length > 0) {
-      res = yield ca.select(active);
+      res = yield cc.select.apply(null, active);
 
       if (res.value === undefined) {
         results = null;
