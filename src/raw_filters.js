@@ -2,7 +2,6 @@
 
 var go = require('./core').go;
 var cc = require('./channels');
-var ca = require('./actions');
 
 exports.source = function*(gen, outch, done) {
   for (;;) {
