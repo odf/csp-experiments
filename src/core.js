@@ -10,21 +10,14 @@ var schedule = function() {
 
   var flush = function() {
     scheduleFlush = true;
-    var n = queue.count() / 2;
-    for (var i = 0; i < n; ++i) {
-      var m = queue.read();
-      var d = queue.read();
-      next(m, d);
-    }
+    for (var i = queue.count(); i > 0; --i)
+      next.apply(null, queue.read());
   };
 
-  return function(machine, data) {
-    if (queue.isFull()) {
-      var n = Math.floor(queue.capacity() * 1.5);
-      queue.resize(n + n % 2); // resize to the next even length
-    }
-    queue.write(machine);
-    queue.write(data);
+  return function(machine, state, value) {
+    if (queue.isFull())
+      queue.resize(Math.floor(queue.capacity() * 1.5));
+    queue.write([machine, state, value]);
     if (scheduleFlush) {
       setImmediate(flush);
       scheduleFlush = false;
@@ -46,7 +39,7 @@ function Action() {
 };
 
 Action.prototype.publish = function(machine) {
-  schedule(machine, [this.state, this.value]);
+  schedule(machine, this.state, this.value);
 };
 
 Action.prototype.subscribe = function(machine) {
@@ -78,15 +71,15 @@ Action.prototype.reject = function(cause) {
 };
 
 
-var next = function(machine, data) {
+var next = function(machine, state, value) {
   var step;
 
-  if (data === undefined)
+  if (state == UNRESOLVED)
     step = machine.next();
-  else if (data[0] == RESOLVED)
-    step = machine.next(data[1]);
+  else if (state == RESOLVED)
+    step = machine.next(value);
   else
-    step = machine['throw'](data[1]);
+    step = machine['throw'](value);
 
   if (!step.done)
     step.value.subscribe(machine);
@@ -96,7 +89,7 @@ var next = function(machine, data) {
 var go = function(machine) {
   var args = Array.prototype.slice.call(arguments, 1);
   var m = machine.apply(undefined, args);
-  schedule(m);
+  schedule(m, UNRESOLVED);
   return m;
 };
 
