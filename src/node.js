@@ -5,7 +5,7 @@ var cc = require('./channels');
 
 
 var apply = exports.apply = function(fn, context, args) {
-  var result = new cr.Action();
+  var result = cr.deferred();
 
   fn.apply(context, args.concat(function(err, val) {
     if (err)

@@ -96,13 +96,13 @@ exports.chan = function(arg) {
 };
 
 exports.push = function(ch, val) {
-  var a = new cc.Action();
+  var a = cc.deferred();
   ch.requestPush(val, a);
   return a;
 };
 
 exports.pull = function(ch) {
-  var a = new cc.Action();
+  var a = cc.deferred();
   ch.requestPull(a);
   return a;
 };
@@ -124,7 +124,7 @@ exports.timeout = function(ms) {
 
 exports.select = function() {
   var args = Array.prototype.slice.call(arguments);
-  var result = new cc.Action();
+  var result = cc.deferred();
   var active = [];
 
   var cancel = function() {
