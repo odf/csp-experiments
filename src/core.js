@@ -40,27 +40,23 @@ const IDLE       = 3;
 
 
 function Action() {
-  this.subscribers = [];
-  this.state = UNRESOLVED;
-  this.value = undefined;
+  this.client = null;
+  this.state  = UNRESOLVED;
+  this.value  = undefined;
 };
 
-Action.prototype.publish = function(subscriber) {
-  schedule(subscriber, [this.state, this.value]);
+Action.prototype.publish = function(machine) {
+  schedule(machine, [this.state, this.value]);
 };
 
 Action.prototype.subscribe = function(machine) {
   if (this.state != UNRESOLVED)
     this.publish(machine);
+  else if (this.client != null)
+    machine['throw'](new Error('actions can only have one client'));
   else
-    this.subscribers.push(machine);
+    this.client = machine;
 }
-
-Action.prototype.unsubscribe = function(machine) {
-  var i = this.subscribers.indexOf(machine);
-  if (i >= 0)
-    this.subscribers.splice(i, 1);
-};
 
 Action.prototype.update = function(state, val) {
   if (this.state != UNRESOLVED)
@@ -69,8 +65,8 @@ Action.prototype.update = function(state, val) {
   this.state = state;
   this.value = val;
 
-  if (this.subscribers.length > 0)
-    this.publish(this.subscribers.shift());
+  if (this.client != null)
+    this.publish(this.client);
 };
 
 Action.prototype.resolve = function(val) {
