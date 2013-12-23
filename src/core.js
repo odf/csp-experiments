@@ -8,6 +8,24 @@ var schedule = function() {
   var queue = new RingBuffer(100);
   var scheduleFlush = true;
 
+  var next = function(machine, state, value) {
+    var step;
+
+    if (state == UNRESOLVED)
+      step = machine.next();
+    else if (state == RESOLVED)
+      step = machine.next(value);
+    else
+      step = machine['throw'](value);
+
+    if (!step.done) {
+      if (!!(step.value) && step.value.constructor == Action)
+        step.value.subscribe(machine);
+      else
+        schedule(machine, RESOLVED, step.value);
+    }
+  };
+
   var flush = function() {
     scheduleFlush = true;
     for (var i = queue.count(); i > 0; --i)
@@ -68,25 +86,6 @@ Action.prototype.resolve = function(val) {
 
 Action.prototype.reject = function(cause) {
   this.update(REJECTED, cause);
-};
-
-
-var next = function(machine, state, value) {
-  var step;
-
-  if (state == UNRESOLVED)
-    step = machine.next();
-  else if (state == RESOLVED)
-    step = machine.next(value);
-  else
-    step = machine['throw'](value);
-
-  if (!step.done) {
-    if (!!(step.value) && step.value.constructor == Action)
-      step.value.subscribe(machine);
-    else
-      schedule(machine, RESOLVED, step.value);
-  }
 };
 
 
