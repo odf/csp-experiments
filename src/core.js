@@ -5,6 +5,28 @@ require('setimmediate');
 var RingBuffer = require('./RingBuffer');
 
 
+var schedule = function() {
+  var queue = new RingBuffer(100);
+  var scheduleFlush = true;
+
+  var flush = function() {
+    scheduleFlush = true;
+    for (var i = queue.count(); i > 0; --i)
+      next.apply(null, queue.read());
+  };
+
+  return function(machine, state, value) {
+    if (queue.isFull())
+      queue.resize(Math.floor(queue.capacity() * 1.5));
+    queue.write([machine, state, value]);
+    if (scheduleFlush) {
+      setImmediate(flush);
+      scheduleFlush = false;
+    }
+  };
+}();
+
+
 const UNRESOLVED = 0;
 const RESOLVED   = 1;
 const REJECTED   = 2;
@@ -15,6 +37,19 @@ function Deferred() {
   this.state  = UNRESOLVED;
   this.value  = undefined;
 };
+
+Deferred.prototype.isResolved = function() {
+  return this.state != UNRESOLVED;
+};
+
+Deferred.prototype.resolve = function(val) {
+  update(this, RESOLVED, val);
+};
+
+Deferred.prototype.reject = function(cause) {
+  update(this, REJECTED, cause);
+};
+
 
 var subscribe = function(machine, deferred) {
   if (deferred.client != null)
@@ -56,44 +91,9 @@ var next = function(machine, state, value) {
 };
 
 
-var schedule = function() {
-  var queue = new RingBuffer(100);
-  var scheduleFlush = true;
-
-  var flush = function() {
-    scheduleFlush = true;
-    for (var i = queue.count(); i > 0; --i)
-      next.apply(null, queue.read());
-  };
-
-  return function(machine, state, value) {
-    if (queue.isFull())
-      queue.resize(Math.floor(queue.capacity() * 1.5));
-    queue.write([machine, state, value]);
-    if (scheduleFlush) {
-      setImmediate(flush);
-      scheduleFlush = false;
-    }
-  };
-}();
-
-
-Deferred.prototype.isResolved = function() {
-  return this.state != UNRESOLVED;
-};
-
-Deferred.prototype.resolve = function(val) {
-  update(this, RESOLVED, val);
-};
- 
-Deferred.prototype.reject = function(cause) {
-  update(this, REJECTED, cause);
-};
-
 exports.deferred = function() {
   return new Deferred();
 };
-
 
 exports.go = function(machine) {
   var args = Array.prototype.slice.call(arguments, 1);
