@@ -56,12 +56,16 @@ function Action() {
   this.value  = undefined;
 };
 
+Action.prototype.isResolved = function() {
+  return this.state != UNRESOLVED;
+};
+
 Action.prototype.publish = function(machine) {
   schedule(machine, this.state, this.value);
 };
 
 Action.prototype.subscribe = function(machine) {
-  if (this.state != UNRESOLVED)
+  if (this.isResolved())
     this.publish(machine);
   else if (this.client != null)
     machine['throw'](new Error('actions can only have one client'));
@@ -70,7 +74,7 @@ Action.prototype.subscribe = function(machine) {
 }
 
 Action.prototype.update = function(state, val) {
-  if (this.state != UNRESOLVED)
+  if (this.isResolved())
     throw new Error("action is already resolved");
 
   this.state = state;

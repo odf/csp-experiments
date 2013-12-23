@@ -37,6 +37,14 @@ Channel.prototype.requestPush = function(val, client) {
   }
 };
 
+Channel.prototype.cancelPush = function(val, client) {
+  var i = this.pending.indexOf([client, val]);
+  if (i >= 0) {
+    this.pending.splice(i, 1);
+    --this.pressure;
+  }
+};
+
 Channel.prototype.pull = function() {
   if (this.pressure > 0) {
     var next   = this.pending.shift();
@@ -66,6 +74,15 @@ Channel.prototype.requestPull = function(client) {
   }
 };
 
+Channel.prototype.cancelPull = function(client) {
+  var i = this.pending.indexOf(client);
+  if (i >= 0) {
+    this.pending.splice(i, 1);
+    ++this.pressure;
+  }
+};
+
+
 Channel.prototype.close = function() {
   while (this.pressure < 0)
     this.push();
@@ -92,4 +109,58 @@ exports.pull = function(ch) {
 
 exports.close = function(ch) {
   ch.close();
+};
+
+
+exports.timeout = function(ms) {
+  var ch = exports.chan();
+  var t = setTimeout(function() {
+    clearTimeout(t);
+    exports.close(ch);
+  }, ms);
+  return ch;
+};
+
+
+exports.select = function() {
+  var args = Array.prototype.slice.call(arguments);
+  var result = new cc.Action();
+  var active = [];
+
+  var cancel = function() {
+    active.forEach(function(op) {
+      if (op.value === undefined)
+        op.channel.cancelPull(op.client);
+      else
+        op.channel.cancelPush(op.client, op.value);
+    });
+  };
+
+  for (var i = 0; i < args.length; ++i) {
+    if (result.isResolved())
+      break;
+    var next = {
+      resolve: function(i, val) {
+        cancel();
+        result.resolve({ index: i, value: val });
+      }.bind(null, i),
+      reject:  function(err) {
+        cancel();
+        result.reject(new Error(err));
+      }
+    };
+    var ch = args[i];
+    var val;
+    if (!!(ch) && ch.constructor == Channel) {
+      active.push({ client: next, channel: ch });
+      ch.requestPull(next);
+    } else {
+      val = ch[1];
+      ch = ch[0];
+      active.push({ client: next, channel: ch, value: val });
+      ch.requestPush(next, val);
+    }
+  }
+
+  return result;
 };

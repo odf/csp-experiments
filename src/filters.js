@@ -112,7 +112,7 @@ exports.chain = function(arg) {
   var val = arg;
   Array.prototype.slice.call(arguments, 1).forEach(function(form) {
     if (Array.isArray(form))
-      val = form[0].apply(null, form.slice(1).concat([val]));
+      val = form[0].apply(null, [].concat(form[1], val, form.slice(2)));
     else
       val = form(val);
   });

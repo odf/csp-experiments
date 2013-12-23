@@ -40,9 +40,9 @@ exports.take = function*(n, inch, outch, done) {
 };
 
 exports.takeWithTimeout = function*(ms, inch, outch, done) {
-  var actions = [ca.sleep(ms), cc.pull(inch)];
+  var t = cc.timeout(ms);
   var val;
-  while((val = (yield ca.select(actions)).value) !== undefined)
+  while((val = (yield cc.select(t, inch)).value) !== undefined)
     if (!(yield cc.push(outch, val)))
       break;
   yield cc.push(done, true);
