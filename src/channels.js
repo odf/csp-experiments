@@ -11,17 +11,23 @@ function Channel(buffer) {
   this.isClosed = false;
 };
 
+Channel.prototype.pushBuffer = function(val) {
+  return this.buffer ? this.buffer.push(val) : false;
+};
+
+Channel.prototype.pullBuffer = function() {
+  if (this.buffer)
+    return this.buffer.pull()[0];
+};
+
 Channel.prototype.push = function(val) {
   if (this.pressure < 0) {
     var client = this.pending.shift();
-    if (this.buffer.push(val))
-      client.resolve(this.buffer.pull()[0]);
-    else
-      client.resolve(val);
+    client.resolve(this.pushBuffer(val) ? this.pullBuffer() : val);
     ++this.pressure;
     return true;
   } else
-    return this.buffer.push(val);
+    return this.pushBuffer(val);
 };
 
 Channel.prototype.requestPush = function(val, client) {
@@ -55,22 +61,22 @@ Channel.prototype.pull = function() {
     var next   = this.pending.shift();
     var client = next[0];
     var val    = next[1];
-    var pulled = this.buffer.pull();
-    if (pulled.length > 0) {
-      this.buffer.push(val);
-      val = pulled[0];
+    var pulled = this.pullBuffer();
+    if (pulled !== undefined) {
+      this.pushBuffer(val);
+      val = pulled;
     }
     client.resolve(true);
     --this.pressure;
-    return [val];
+    return val;
   } else
-    return this.buffer.pull();
+    return this.pullBuffer();
 };
 
 Channel.prototype.requestPull = function(client) {
   var res = this.pull();
-  if (res.length > 0)
-    client.resolve(res[0]);
+  if (res !== undefined)
+    client.resolve(res);
   else if (this.isClosed)
     client.resolve();
   else {
@@ -100,7 +106,11 @@ Channel.prototype.close = function() {
 
 
 exports.chan = function(arg) {
-  var buffer = (typeof arg == "object") ? arg : new cb.Buffer(arg || 0);
+  var buffer;
+  if (typeof arg == "object")
+    buffer = arg;
+  else if (arg)
+    buffer = new cb.Buffer(arg);
   return new Channel(buffer);
 };
 
