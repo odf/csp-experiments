@@ -1,31 +1,6 @@
 'use strict';
 
-require('setimmediate');
-
-var RingBuffer = require('./RingBuffer');
-
-
-var schedule = function() {
-  var queue = new RingBuffer(100);
-  var scheduleFlush = true;
-
-  var flush = function() {
-    scheduleFlush = true;
-    for (var i = queue.count(); i > 0; --i)
-      queue.read()();
-  };
-
-  return function(thunk) {
-    if (queue.isFull())
-      queue.resize(Math.floor(queue.capacity() * 1.5));
-    queue.write(thunk);
-    if (scheduleFlush) {
-      setImmediate(flush);
-      scheduleFlush = false;
-    }
-  };
-}();
-
+var makeScheduler = require('./scheduler');
 
 const UNRESOLVED = 0;
 const RESOLVED   = 1;
@@ -51,11 +26,16 @@ Deferred.prototype.reject = function(cause) {
 };
 
 
-var scheduleNext = function(machine, state, value) {
-  schedule(function() {
-    next(machine, state, value);
-  });
-};
+var scheduleNext = (function() {
+  var enqueue = makeScheduler();
+
+  return function(machine, state, value) {
+    enqueue(function() {
+      next(machine, state, value);
+    });
+  };
+})();
+
 
 var subscribe = function(machine, deferred) {
   if (deferred.client != null)
