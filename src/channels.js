@@ -7,6 +7,7 @@ var cb = require('./buffers');
 function Channel(buffer) {
   this.buffer   = buffer;
   this.pending  = [];
+  this.data     = [];
   this.pressure = 0;
   this.isClosed = false;
 };
@@ -38,16 +39,16 @@ Channel.prototype.requestPush = function(val, client) {
   else if (this.push(val))
     client.resolve(true);
   else {
-    this.pending.push([client, val]);
+    this.pending.push(client);
+    this.data.push(val);
     ++this.pressure;
   }
 };
 
 Channel.prototype.pull = function() {
   if (this.pressure > 0) {
-    var next   = this.pending.shift();
-    var client = next[0];
-    var val    = next[1];
+    var client = this.pending.shift();
+    var val    = this.data.shift();
     var pulled = this.pullBuffer();
     if (pulled !== undefined) {
       this.pushBuffer(val);
@@ -72,27 +73,15 @@ Channel.prototype.requestPull = function(client) {
   }
 };
 
-Channel.prototype.cancelPush = function(client, val) {
-  if (this.pressure <= 0)
-    return;
-
-  for (var i = 0; i < this.pending.length; ++i) {
-    if (this.pending[i][0] === client && this.pending[i][1] == val) {
-      this.pending.splice(i, 1);
-      --this.pressure;
-      break;
-    }
-  }
-};
-
-Channel.prototype.cancelPull = function(client) {
-  if (this.pressure >= 0)
-    return;
-
+Channel.prototype.cancelRequest = function(client) {
   for (var i = 0; i < this.pending.length; ++i) {
     if (this.pending[i] === client) {
       this.pending.splice(i, 1);
-      ++this.pressure;
+      if (this.pressure > 0) {
+        this.data.splice(i, 1);
+        --this.pressure;
+      } else
+        ++this.pressure;
       break;
     }
   }
@@ -143,13 +132,9 @@ exports.timeout = function(ms) {
 
 var cancelOperation = function(op) {
   var channel = op[0];
-  var client  = op[1];
-  var value   = op[2];
+  var machine = op[1];
 
-  if (value === undefined)
-    channel.cancelPull(client);
-  else
-    channel.cancelPush(client, value);
+  channel.cancelRequest(machine);
 };
 
 var makeClient = function(i, result, cancel) {
@@ -169,7 +154,7 @@ exports.select = function() {
   var args   = Array.prototype.slice.call(arguments);
   var result = cc.deferred();
   var active = [];
-  var cancel = function() { active.forEach(cancelOperation); };
+  var cancel = function() { active.forEach(); };
 
   var client, isPush, channel, value;
 
@@ -184,7 +169,7 @@ exports.select = function() {
     else
       channel = args[i];
 
-    active.push([channel, client, value]);
+    active.push([channel, client]);
 
     if (isPush)
       channel.requestPush(client, value);
