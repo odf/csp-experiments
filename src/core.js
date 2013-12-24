@@ -1,20 +1,20 @@
 'use strict';
 
-var makeScheduler = require('./scheduler');
+var enqueue = require('./scheduler')();
 
-const UNRESOLVED = 0;
-const RESOLVED   = 1;
-const REJECTED   = 2;
+const PENDING  = 0;
+const RESOLVED = 1;
+const REJECTED = 2;
 
 
 function Deferred() {
   this.client = null;
-  this.state  = UNRESOLVED;
+  this.state  = PENDING;
   this.value  = undefined;
 };
 
 Deferred.prototype.isResolved = function() {
-  return this.state != UNRESOLVED;
+  return this.state != PENDING;
 };
 
 Deferred.prototype.resolve = function(val) {
@@ -26,21 +26,15 @@ Deferred.prototype.reject = function(cause) {
 };
 
 
-var scheduleNext = (function() {
-  var enqueue = makeScheduler();
-
-  return function(machine, state, value) {
-    enqueue(function() {
-      next(machine, state, value);
-    });
-  };
-})();
-
+var scheduleNext = function(machine, state, val) {
+  enqueue(function() { next(machine, state, val); });
+};
 
 var subscribe = function(machine, deferred) {
   if (deferred.client != null)
     machine['throw'](new Error('a deferred can only have one client'));
-  else if (deferred.isResolved())
+
+  if (deferred.isResolved())
     scheduleNext(machine, deferred.state, deferred.value);
   else
     deferred.client = machine;
@@ -54,19 +48,11 @@ var update = function(deferred, state, val) {
   deferred.value = val;
 
   if (deferred.client != null)
-    scheduleNext(deferred.client, deferred.state, deferred.value);
+    scheduleNext(deferred.client, state, val);
 };
 
-
-var next = function(machine, state, value) {
-  var step;
-
-  if (state == UNRESOLVED)
-    step = machine.next();
-  else if (state == RESOLVED)
-    step = machine.next(value);
-  else
-    step = machine['throw'](value);
+var next = function(machine, state, val) {
+  var step = (state == REJECTED) ? machine['throw'](val) : machine.next(val);
 
   if (!step.done) {
     if (step.value != null && step.value.constructor == Deferred)
@@ -84,6 +70,6 @@ exports.deferred = function() {
 exports.go = function(generator) {
   var args = Array.prototype.slice.call(arguments, 1);
   var machine = generator.apply(undefined, args);
-  scheduleNext(machine, UNRESOLVED);
+  scheduleNext(machine);
   return machine;
 };
