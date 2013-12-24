@@ -130,36 +130,34 @@ exports.timeout = function(ms) {
 };
 
 
-var cancelOperation = function(op) {
-  var channel = op[0];
-  var machine = op[1];
-
-  channel.cancelRequest(machine);
-};
-
-var makeClient = function(i, result, cancel) {
+var makeClient = function(i, channel, result, cleanup) {
   return {
     resolve: function(val) {
-      cancel();
+      cleanup();
       result.resolve({ index: i, value: val });
     },
     reject: function(err) {
-      cancel();
+      cleanup();
       result.reject(new Error(err));
+    },
+    cancel: function() {
+      channel.cancelRequest(this);
     }
   };
 };
 
 exports.select = function() {
-  var args   = Array.prototype.slice.call(arguments);
-  var result = cc.deferred();
-  var active = [];
-  var cancel = function() { active.forEach(); };
+  var args    = Array.prototype.slice.call(arguments);
+  var result  = cc.deferred();
+  var active  = [];
+  var cleanup = function() {
+    for (var i = 0; i < active.length; ++i)
+      active[i].cancel();
+  };
 
-  var client, isPush, channel, value;
+  var isPush, channel, value, client;
 
   for (var i = 0; i < args.length; ++i) {
-    client = makeClient(i, result, cancel);
     isPush = Array.isArray(args[i]);
 
     if (isPush) {
@@ -169,7 +167,8 @@ exports.select = function() {
     else
       channel = args[i];
 
-    active.push([channel, client]);
+    client = makeClient(i, channel, result, cleanup);
+    active.push(client);
 
     if (isPush)
       channel.requestPush(client, value);
