@@ -38,10 +38,15 @@ Channel.prototype.requestPush = function(val, client) {
 };
 
 Channel.prototype.cancelPush = function(val, client) {
-  var i = this.pending.indexOf([client, val]);
-  if (i >= 0) {
-    this.pending.splice(i, 1);
-    --this.pressure;
+  if (this.pressure <= 0)
+    return;
+
+  for (var i = 0; i < this.pending.length; ++i) {
+    if (this.pending[i][0] == client) {
+      this.pending.splice(i, 1);
+      --this.pressure;
+      break;
+    }
   }
 };
 
@@ -75,13 +80,17 @@ Channel.prototype.requestPull = function(client) {
 };
 
 Channel.prototype.cancelPull = function(client) {
-  var i = this.pending.indexOf(client);
-  if (i >= 0) {
-    this.pending.splice(i, 1);
-    ++this.pressure;
+  if (this.pressure >= 0)
+    return;
+
+  for (var i = 0; i < this.pending.length; ++i) {
+    if (this.pending[i] == client) {
+      this.pending.splice(i, 1);
+      ++this.pressure;
+      break;
+    }
   }
 };
-
 
 Channel.prototype.close = function() {
   while (this.pressure < 0)
