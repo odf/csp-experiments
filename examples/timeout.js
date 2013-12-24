@@ -1,6 +1,6 @@
 'use strict';
 
-var cc = require('./index');
+var cc = require('../index');
 
 var infiniteRange = function*(start) {
   for (var i = start; ; i += 1)
