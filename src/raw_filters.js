@@ -29,6 +29,19 @@ exports.filter = function*(pred, inch, outch, done) {
   yield cc.push(done, true);
 };
 
+exports.reductions = function*(fn, inch, outch, done) {
+  var val, acc;
+  while ((val = yield cc.pull(inch)) !== undefined) {
+    if (acc === undefined)
+      acc = val;
+    else
+      acc = fn(acc, val);
+    if (!(yield cc.push(outch, acc)))
+      break;
+  }
+  yield cc.push(done, true);
+};
+
 exports.take = function*(n, inch, outch, done) {
   var val, i;
   for (i = 0; i < n; ++i) {

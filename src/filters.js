@@ -53,6 +53,10 @@ exports.filter = function(pred, ch, options) {
   return pipe(cf.filter, pred, ch, options || {});
 };
 
+exports.reductions = function(fn, ch, options) {
+  return pipe(cf.reductions, fn, ch, options || {});
+};
+
 exports.take = function(n, ch, options) {
   return pipe(cf.take, n, ch, options || {});
 };
