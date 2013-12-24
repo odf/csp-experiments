@@ -43,19 +43,6 @@ Channel.prototype.requestPush = function(val, client) {
   }
 };
 
-Channel.prototype.cancelPush = function(val, client) {
-  if (this.pressure <= 0)
-    return;
-
-  for (var i = 0; i < this.pending.length; ++i) {
-    if (this.pending[i][0] == client) {
-      this.pending.splice(i, 1);
-      --this.pressure;
-      break;
-    }
-  }
-};
-
 Channel.prototype.pull = function() {
   if (this.pressure > 0) {
     var next   = this.pending.shift();
@@ -85,12 +72,25 @@ Channel.prototype.requestPull = function(client) {
   }
 };
 
+Channel.prototype.cancelPush = function(client, val) {
+  if (this.pressure <= 0)
+    return;
+
+  for (var i = 0; i < this.pending.length; ++i) {
+    if (this.pending[i][0] === client && this.pending[i][1] == val) {
+      this.pending.splice(i, 1);
+      --this.pressure;
+      break;
+    }
+  }
+};
+
 Channel.prototype.cancelPull = function(client) {
   if (this.pressure >= 0)
     return;
 
   for (var i = 0; i < this.pending.length; ++i) {
-    if (this.pending[i] == client) {
+    if (this.pending[i] === client) {
       this.pending.splice(i, 1);
       ++this.pressure;
       break;
@@ -141,44 +141,58 @@ exports.timeout = function(ms) {
 };
 
 
+var cancelOperation = function(op) {
+  var channel = op[0];
+  var client  = op[1];
+  var value   = op[2];
+
+  if (value === undefined)
+    channel.cancelPull(client);
+  else
+    channel.cancelPush(client, value);
+};
+
+var makeClient = function(i, result, cancel) {
+  return {
+    resolve: function(val) {
+      cancel();
+      result.resolve({ index: i, value: val });
+    },
+    reject: function(err) {
+      cancel();
+      result.reject(new Error(err));
+    }
+  };
+};
+
 exports.select = function() {
-  var args = Array.prototype.slice.call(arguments);
+  var args   = Array.prototype.slice.call(arguments);
   var result = cc.deferred();
   var active = [];
+  var cancel = function() { active.forEach(cancelOperation); };
 
-  var cancel = function() {
-    active.forEach(function(op) {
-      if (op.value === undefined)
-        op.channel.cancelPull(op.client);
-      else
-        op.channel.cancelPush(op.client, op.value);
-    });
-  };
+  var client, isPush, channel, value;
 
   for (var i = 0; i < args.length; ++i) {
+    client = makeClient(i, result, cancel);
+    isPush = Array.isArray(args[i]);
+
+    if (isPush) {
+      channel = args[i][0];
+      value   = args[i][1];
+    }
+    else
+      channel = args[i];
+
+    active.push([channel, client, value]);
+
+    if (isPush)
+      channel.requestPush(client, value);
+    else
+      channel.requestPull(client);
+
     if (result.isResolved())
       break;
-    var next = {
-      resolve: function(i, val) {
-        cancel();
-        result.resolve({ index: i, value: val });
-      }.bind(null, i),
-      reject:  function(err) {
-        cancel();
-        result.reject(new Error(err));
-      }
-    };
-    var ch = args[i];
-    var val;
-    if (!!(ch) && ch.constructor == Channel) {
-      active.push({ client: next, channel: ch });
-      ch.requestPull(next);
-    } else {
-      val = ch[1];
-      ch = ch[0];
-      active.push({ client: next, channel: ch, value: val });
-      ch.requestPush(next, val);
-    }
   }
 
   return result;
