@@ -3,6 +3,9 @@
   "version": "0.0.17",
   "private": true,
   "main": "./index.js",
+  "devDependencies": {
+    "q": "0.9.7"
+  },
   "dependencies": {
     "setimmediate": "~1.0.1"
   }

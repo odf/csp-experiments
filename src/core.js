@@ -54,12 +54,22 @@ var scheduleNext = function(machine, state, val) {
 
 var next = function(machine, state, val) {
   var step = (state == REJECTED) ? machine['throw'](val) : machine.next(val);
+  var result;
 
   if (!step.done) {
-    if (step.value != null && step.value.constructor == Deferred)
-      step.value.subscribe(machine);
+    result = step.value;
+    if (result == null)
+      scheduleNext(machine, RESOLVED, result);
+    else if (result.constructor == Deferred)
+      result.subscribe(machine);
+    else if (typeof result.then == 'function')
+      result.then(function(value) {
+        next(machine, RESOLVED, value);
+      }, function(reason) {
+        next(machine, REJECTED, reason);
+      });
     else
-      scheduleNext(machine, RESOLVED, step.value);
+      scheduleNext(machine, RESOLVED, result);
   }
 };
 
