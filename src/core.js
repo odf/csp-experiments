@@ -12,13 +12,13 @@ var schedule = function() {
   var flush = function() {
     scheduleFlush = true;
     for (var i = queue.count(); i > 0; --i)
-      next.apply(null, queue.read());
+      queue.read()();
   };
 
-  return function(machine, state, value) {
+  return function(thunk) {
     if (queue.isFull())
       queue.resize(Math.floor(queue.capacity() * 1.5));
-    queue.write([machine, state, value]);
+    queue.write(thunk);
     if (scheduleFlush) {
       setImmediate(flush);
       scheduleFlush = false;
@@ -51,11 +51,17 @@ Deferred.prototype.reject = function(cause) {
 };
 
 
+var scheduleNext = function(machine, state, value) {
+  schedule(function() {
+    next(machine, state, value);
+  });
+};
+
 var subscribe = function(machine, deferred) {
   if (deferred.client != null)
     machine['throw'](new Error('a deferred can only have one client'));
   else if (deferred.isResolved())
-    schedule(machine, deferred.state, deferred.value);
+    scheduleNext(machine, deferred.state, deferred.value);
   else
     deferred.client = machine;
 }
@@ -68,7 +74,7 @@ var update = function(deferred, state, val) {
   deferred.value = val;
 
   if (deferred.client != null)
-    schedule(deferred.client, deferred.state, deferred.value);
+    scheduleNext(deferred.client, deferred.state, deferred.value);
 };
 
 
@@ -83,10 +89,10 @@ var next = function(machine, state, value) {
     step = machine['throw'](value);
 
   if (!step.done) {
-    if (!!(step.value) && step.value.constructor == Deferred)
+    if (step.value != null && step.value.constructor == Deferred)
       subscribe(machine, step.value);
     else
-      schedule(machine, RESOLVED, step.value);
+      scheduleNext(machine, RESOLVED, step.value);
   }
 };
 
@@ -95,9 +101,9 @@ exports.deferred = function() {
   return new Deferred();
 };
 
-exports.go = function(machine) {
+exports.go = function(generator) {
   var args = Array.prototype.slice.call(arguments, 1);
-  var m = machine.apply(undefined, args);
-  schedule(m, UNRESOLVED);
-  return m;
+  var machine = generator.apply(undefined, args);
+  scheduleNext(machine, UNRESOLVED);
+  return machine;
 };
