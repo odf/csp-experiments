@@ -130,6 +130,22 @@ exports.timeout = function(ms) {
 };
 
 
+exports.ticker = function(ms) {
+  var ch = exports.chan();
+  var t;
+  var step = function() {
+    clearTimeout(t);
+    t = setTimeout(step, ms);
+    cc.go(function*() {
+      if (!(yield exports.push(ch, null)))
+        clearTimeout(t);
+    });
+  };
+  t = setTimeout(step, ms);
+  return ch;
+};
+
+
 var makeClient = function(i, channel, result, cleanup) {
   return {
     resolve: function(val) {
