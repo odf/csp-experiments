@@ -17,8 +17,7 @@ var run = function(buffer) {
 
   return cc.chain(ch,
                   [cc.take, 20],
-                  [cc.each, console.log],
-                  cc.pull);
+                  [cc.each, console.log]);
 };
 
 cc.go(function*() {

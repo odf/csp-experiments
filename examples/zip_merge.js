@@ -26,20 +26,17 @@ var makeChannels = function() {
 cc.go(function*() {
   yield cc.chain(cc.merge(makeChannels()),
                  [cc.take, 30],
-                 [cc.each, console.log],
-                 cc.pull);
+                 [cc.each, console.log]);
 
   console.log();
 
   yield cc.chain(cc.combine(makeChannels()),
                  [cc.take, 20],
-                 [cc.each, console.log],
-                 cc.pull);
+                 [cc.each, console.log]);
 
   console.log();
 
   yield cc.chain(cc.zip(makeChannels()),
                  [cc.take, 20],
-                 [cc.each, console.log],
-                 cc.pull);
+                 [cc.each, console.log]);
 });

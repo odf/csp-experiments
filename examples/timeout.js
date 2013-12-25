@@ -15,22 +15,19 @@ cc.go(function*() {
 
   yield cc.chain(ch,
                  [cc.take, 10, { keepInput: true }],
-                 [cc.each, console.log],
-                 cc.pull);
+                 [cc.each, console.log]);
 
   console.log();
   console.log('Taking further numbers for ' + ms + ' miliseconds:');
 
   yield cc.chain(ch,
                  [cc.takeWithTimeout, ms, { keepInput: true }],
-                 [cc.each, console.log],
-                 cc.pull);
+                 [cc.each, console.log]);
 
   console.log();
   console.log('Taking 10 more numbers:');
 
   yield cc.chain(ch,
                  [cc.take, 10, { keepInput: true }],
-                 [cc.each, console.log],
-                 cc.pull);
+                 [cc.each, console.log]);
 });

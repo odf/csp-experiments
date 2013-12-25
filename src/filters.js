@@ -109,7 +109,7 @@ exports.each = function(fn, ch, options) {
   go(cf.each, fn, ch, done);
   go(sentinel, ch, done, done, options || {});
 
-  return done;
+  return cc.pull(done);
 };
 
 exports.chain = function(arg) {
