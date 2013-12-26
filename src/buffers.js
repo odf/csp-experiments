@@ -42,12 +42,7 @@ DroppingBuffer.prototype.push = function(val) {
   return true;
 };
 
-DroppingBuffer.prototype.pull = function() {
-  if (this.buffer.isEmpty())
-    return [];
-  else
-    return [this.buffer.read()];
-};
+DroppingBuffer.prototype.pull = Buffer.prototype.pull;
 
 
 var SlidingBuffer = exports.SlidingBuffer = function SlidingBuffer(size) {
@@ -63,9 +58,4 @@ SlidingBuffer.prototype.push = function(val) {
   return true;
 };
 
-SlidingBuffer.prototype.pull = function() {
-  if (this.buffer.isEmpty())
-    return [];
-  else
-    return [this.buffer.read()];
-};
+SlidingBuffer.prototype.pull = Buffer.prototype.pull;
