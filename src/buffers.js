@@ -3,6 +3,11 @@
 var RingBuffer = require('./RingBuffer');
 
 
+var pull = function() {
+  return this.buffer.isEmpty() ? [] : [this.buffer.read()];
+};
+
+
 var Buffer = exports.Buffer = function Buffer(size) {
   this.buffer = new RingBuffer(size);
 };
@@ -20,12 +25,7 @@ Buffer.prototype.push = function(val) {
   }
 };
 
-Buffer.prototype.pull = function() {
-  if (this.buffer.isEmpty())
-    return [];
-  else
-    return [this.buffer.read()];
-};
+Buffer.prototype.pull = pull;
 
 
 var DroppingBuffer = exports.DroppingBuffer = function DroppingBuffer(size) {
@@ -42,7 +42,7 @@ DroppingBuffer.prototype.push = function(val) {
   return true;
 };
 
-DroppingBuffer.prototype.pull = Buffer.prototype.pull;
+DroppingBuffer.prototype.pull = pull;
 
 
 var SlidingBuffer = exports.SlidingBuffer = function SlidingBuffer(size) {
@@ -58,4 +58,4 @@ SlidingBuffer.prototype.push = function(val) {
   return true;
 };
 
-SlidingBuffer.prototype.pull = Buffer.prototype.pull;
+SlidingBuffer.prototype.pull = pull;
