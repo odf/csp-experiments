@@ -42,7 +42,9 @@ exports.fromStream = function(stream, outch, keepOpen)
 
   stream.on('end', function() {
     if (!keepOpen)
-      cc.close(ch);
+      cr.go(function*() {
+        yield cc.close(ch);
+      })
   });
 
   stream.on('error', function(err) {
