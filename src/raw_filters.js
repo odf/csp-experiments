@@ -94,42 +94,42 @@ exports.dropWhile = function*(pred, inch, outch, done) {
 };
 
 exports.merge = function*(inchs, outch, done) {
-  var active = inchs.slice();
+  var active = cc.chan();
 
-  while (active.length > 0) {
-    var res = yield cc.select.apply(null, active);
-    if (res.value === undefined)
-      active.splice(res.index, 1);
-    else
-      if (!(yield cc.push(outch, res.value)))
-        break;
-  }
+  inchs.forEach(function(ch) {
+    go(function*() {
+      var val;
+      while((val = (yield cc.select(active, ch)).value) !== undefined)
+        if (!(yield cc.push(outch, val)))
+          break;
+      active.close();
+    });
+  });
+
+  yield cc.pull(active);
   yield cc.push(done, true);
 };
 
 exports.combine = function*(inchs, outch, done) {
-  var results, active, indices, i, res;
+  var result = new Array(inchs.length);
+  var active = cc.chan();
 
-  active  = inchs.slice();
-  indices = []
-  for (i = 0; i < inchs.length; ++i)
-    indices.push(i);
+  var run = function(i) {
+    go(function*() {
+      var val;
+      while((val = (yield cc.select(active, inchs[i])).value) !== undefined) {
+        result[i] = val;
+        if (!(yield cc.push(outch, result.slice())))
+          break;
+      }
+      active.close();
+    });
+  };
 
-  results = new Array(inchs.length);
+  for (var i = 0; i < inchs.length; ++i)
+    run(i);
 
-  while (active.length > 0) {
-    res = yield cc.select.apply(null, active);
-    i = res.index;
-
-    if (res.value === undefined) {
-      active.splice(i, 1);
-      indices.splice(i, 1);
-    } else {
-      results[indices[i]] = res.value;
-      if (!(yield cc.push(outch, results.slice())))
-        break;
-    }
-  }
+  yield cc.pull(active);
   yield cc.push(done, true);
 };
 
