@@ -64,9 +64,9 @@ var next = function(machine, state, val) {
       result.subscribe(machine);
     else if (typeof result.then == 'function')
       result.then(function(value) {
-        next(machine, RESOLVED, value);
+        scheduleNext(machine, RESOLVED, value);
       }, function(reason) {
-        next(machine, REJECTED, reason);
+        scheduleNext(machine, REJECTED, reason);
       });
     else
       scheduleNext(machine, RESOLVED, result);
