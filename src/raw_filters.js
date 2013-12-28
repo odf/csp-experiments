@@ -134,33 +134,35 @@ exports.combine = function*(inchs, outch, done) {
 };
 
 exports.zip = function*(inchs, outch, done) {
-  var results, active, indices, i, res;
+  var merged = cc.chan();
+  var n = inchs.length;
+  var val = new Array(n);
+  var i, terminate;
 
-  results = new Array(inchs.length);
+  var read = function(i) {
+    go(function*() {
+      yield cc.push(merged, [i, yield cc.pull(inchs[i])]);
+    });
+  };
 
-  while (results !== null) {
-    active  = inchs.slice();
-    indices = []
-    for (i = 0; i < inchs.length; ++i)
-      indices.push(i);
+  while (true) {
+    for (i = 0; i < n; ++ i)
+      read(i);
 
-    while (active.length > 0) {
-      res = yield cc.select.apply(null, active);
-
-      if (res.value === undefined) {
-        results = null;
-        break;
+    terminate = yield go(function*() {
+      for (var k = 0; k < n; ++k) {
+        var t = yield cc.pull(merged);
+        val[t[0]] = t[1];
+        if (t[1] === undefined)
+          return true;
       }
+      return false;
+    });
 
-      i = res.index;
-      results[indices[i]] = res.value;
-      active.splice(i, 1);
-      indices.splice(i, 1);
-    }
-
-    if (!(yield cc.push(outch, results.slice())))
+    if (terminate || !(yield cc.push(outch, val.slice())))
       break;
   }
+
   yield cc.push(done, true);
 };
 
