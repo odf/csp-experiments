@@ -7,14 +7,21 @@ const REJECTED = 2;
 
 
 function Deferred() {
-  this.client = null;
-  this.state  = PENDING;
-  this.value  = undefined;
+  this.onResolve = null;
+  this.onReject  = null;
+  this.state     = PENDING;
+  this.value     = undefined;
 };
 
-Deferred.prototype.isResolved = function() {
-  return this.state != PENDING;
-};
+Deferred.prototype.then = function(onResolve, onReject) {
+  if (this.onResolve != null || this.onReject != null)
+    onReject(new Error('deferred has already been subscribed to'));
+  else {
+    this.onResolve = onResolve;
+    this.onReject  = onReject;
+    this.publish();
+  }
+}
 
 Deferred.prototype.resolve = function(val) {
   this.update(RESOLVED, val);
@@ -24,23 +31,9 @@ Deferred.prototype.reject = function(cause) {
   this.update(REJECTED, cause);
 };
 
-Deferred.prototype.publish = function() {
-  if (this.client) {
-    if (this.state == RESOLVED)
-      this.client.resolve(this.value);
-    else if (this.state == REJECTED)
-      this.client.reject(this.value);
-  }
+Deferred.prototype.isResolved = function() {
+  return this.state != PENDING;
 };
-
-Deferred.prototype.subscribe = function(machine) {
-  if (this.client != null)
-    machine.reject(new Error('a deferred can only have one client'));
-  else {
-    this.client = machine;
-    this.publish();
-  }
-}
 
 Deferred.prototype.update = function(state, val) {
   if (this.isResolved())
@@ -49,6 +42,13 @@ Deferred.prototype.update = function(state, val) {
   this.state = state;
   this.value = val;
   this.publish();
+};
+
+Deferred.prototype.publish = function() {
+  if (this.state == RESOLVED && this.onResolve)
+    this.onResolve(this.value);
+  else if (this.state == REJECTED && this.onReject)
+    this.onReject(this.value);
 };
 
 
