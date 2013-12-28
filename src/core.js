@@ -49,14 +49,21 @@ Deferred.prototype.update = function(state, val) {
 
 
 var scheduleNext = function(machine, state, val) {
-  enqueue(function() { next(machine, state, val); });
+  enqueue(function() { runNext(machine, state, val); });
 };
 
-var next = function(machine, state, val) {
-  var step = (state == REJECTED) ? machine['throw'](val) : machine.next(val);
+var runNext = function(machine, state, val) {
+  var step;
   var result;
 
-  if (!step.done) {
+  if (state == REJECTED)
+    step = machine.generator['throw'](val);
+  else
+    step = machine.generator.next(val);
+
+  if (step.done)
+    machine.result.resolve(step.value);
+  else {
     result = step.value;
     if (result == null)
       scheduleNext(machine, RESOLVED, result);
@@ -80,7 +87,10 @@ exports.deferred = function() {
 
 exports.go = function(generator) {
   var args = Array.prototype.slice.call(arguments, 1);
-  var machine = generator.apply(undefined, args);
+  var machine = {
+    generator: generator.apply(undefined, args),
+    result   : new Deferred()
+  };
   scheduleNext(machine);
-  return machine;
+  return machine.result;
 };
