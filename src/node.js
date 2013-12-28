@@ -1,11 +1,12 @@
 'use strict';
 
-var cr = require('./core');
+var go = require('./core').go;
+var deferred = require('./deferred').deferred;
 var cc = require('./channels');
 
 
 var apply = exports.apply = function(fn, context, args) {
-  var result = cr.deferred();
+  var result = deferred();
 
   fn.apply(context, args.concat(function(err, val) {
     if (err)
@@ -35,14 +36,14 @@ exports.fromStream = function(stream, outch, keepOpen)
   var ch = outch || cc.chan();
 
   stream.on('data', function(data) {
-    cr.go(function*() {
+    go(function*() {
       yield cc.push(ch, data);
     });
   });
 
   stream.on('end', function() {
     if (!keepOpen)
-      cr.go(function*() {
+      go(function*() {
         yield cc.close(ch);
       })
   });

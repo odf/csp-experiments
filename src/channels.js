@@ -1,7 +1,8 @@
 'use strict';
 
-var cc = require('./core');
-var cb = require('./buffers');
+var go = require('./core').go;
+var deferred = require('./deferred').deferred;
+var Buffer = require('./buffers').Buffer;
 
 
 function Channel(buffer) {
@@ -99,18 +100,18 @@ exports.chan = function(arg) {
   if (typeof arg == "object")
     buffer = arg;
   else if (arg)
-    buffer = new cb.Buffer(arg);
+    buffer = new Buffer(arg);
   return new Channel(buffer);
 };
 
 exports.push = function(ch, val) {
-  var a = cc.deferred();
+  var a = deferred();
   ch.requestPush(val, a);
   return a;
 };
 
 exports.pull = function(ch) {
-  var a = cc.deferred();
+  var a = deferred();
   ch.requestPull(a);
   return a;
 };
@@ -136,7 +137,7 @@ exports.ticker = function(ms) {
   var step = function() {
     clearTimeout(t);
     t = setTimeout(step, ms);
-    cc.go(function*() {
+    go(function*() {
       if (!(yield exports.push(ch, null)))
         clearTimeout(t);
     });
@@ -164,7 +165,7 @@ var makeClient = function(i, channel, result, cleanup) {
 
 exports.select = function() {
   var args    = Array.prototype.slice.call(arguments);
-  var result  = cc.deferred();
+  var result  = deferred();
   var active  = [];
   var cleanup = function() {
     for (var i = 0; i < active.length; ++i)
