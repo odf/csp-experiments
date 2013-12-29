@@ -22,7 +22,7 @@ Channel.prototype.pullBuffer = function() {
     return this.buffer.pull()[0];
 };
 
-Channel.prototype.push = function(val) {
+Channel.prototype.tryPush = function(val) {
   if (this.pressure < 0) {
     var client = this.pending.shift();
     client.resolve(this.pushBuffer(val) ? this.pullBuffer() : val);
@@ -37,7 +37,7 @@ Channel.prototype.requestPush = function(val, client) {
     client.reject(new Error("push() requires an argument"));
   else if (this.isClosed)
     client.resolve(false);
-  else if (this.push(val))
+  else if (this.tryPush(val))
     client.resolve(true);
   else {
     this.pending.push(client);
@@ -46,7 +46,7 @@ Channel.prototype.requestPush = function(val, client) {
   }
 };
 
-Channel.prototype.pull = function() {
+Channel.prototype.tryPull = function() {
   if (this.pressure > 0) {
     var client = this.pending.shift();
     var val    = this.data.shift();
@@ -63,7 +63,7 @@ Channel.prototype.pull = function() {
 };
 
 Channel.prototype.requestPull = function(client) {
-  var res = this.pull();
+  var res = this.tryPull();
   if (res !== undefined)
     client.resolve(res);
   else if (this.isClosed)
@@ -90,7 +90,7 @@ Channel.prototype.cancelRequest = function(client) {
 
 Channel.prototype.close = function() {
   while (this.pressure < 0)
-    this.push();
+    this.tryPush();
   this.isClosed = true;
 };
 
