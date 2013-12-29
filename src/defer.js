@@ -52,6 +52,6 @@ Deferred.prototype.publish = function() {
 };
 
 
-exports.deferred = function() {
+exports.defer = function() {
   return new Deferred();
 };

@@ -1,12 +1,12 @@
 'use strict';
 
-var go = require('./core').go;
-var deferred = require('./deferred').deferred;
-var cc = require('./channels');
+var go    = require('./core').go;
+var defer = require('./defer').defer;
+var cc    = require('./channels');
 
 
 var apply = exports.apply = function(fn, context, args) {
-  var result = deferred();
+  var result = defer();
 
   fn.apply(context, args.concat(function(err, val) {
     if (err)
