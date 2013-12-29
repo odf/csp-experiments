@@ -35,17 +35,11 @@ exports.fromStream = function(stream, outch, keepOpen)
 {
   var ch = outch || cc.chan();
 
-  stream.on('data', function(data) {
-    go(function*() {
-      yield cc.push(ch, data);
-    });
-  });
+  stream.on('data', cc.push.bind(null, ch));
 
   stream.on('end', function() {
     if (!keepOpen)
-      go(function*() {
-        yield cc.close(ch);
-      })
+      cc.close(ch);
   });
 
   stream.on('error', function(err) {

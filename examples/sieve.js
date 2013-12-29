@@ -27,7 +27,7 @@ var sieve = function*(outch, done) {
   }
   cc.close(ch);
 
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 var lessThan = function(n) {

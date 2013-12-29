@@ -9,7 +9,7 @@ exports.source = function*(gen, outch, done) {
     if (step.done || !(yield cc.push(outch, step.value)))
       break;
   }
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 exports.map = function*(fn, inch, outch, done) {
@@ -17,7 +17,7 @@ exports.map = function*(fn, inch, outch, done) {
   while((val = yield cc.pull(inch)) !== undefined)
     if(!(yield cc.push(outch, fn(val))))
       break;
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 exports.filter = function*(pred, inch, outch, done) {
@@ -26,7 +26,7 @@ exports.filter = function*(pred, inch, outch, done) {
     if (pred(val))
       if (!(yield cc.push(outch, val)))
         break;
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 exports.reductions = function*(fn, inch, outch, done) {
@@ -39,7 +39,7 @@ exports.reductions = function*(fn, inch, outch, done) {
     if (!(yield cc.push(outch, acc)))
       break;
   }
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 exports.take = function*(n, inch, outch, done) {
@@ -49,7 +49,7 @@ exports.take = function*(n, inch, outch, done) {
     if (val === undefined || !(yield cc.push(outch, val)))
       break;
   }
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 exports.takeWithTimeout = function*(ms, inch, outch, done) {
@@ -58,7 +58,7 @@ exports.takeWithTimeout = function*(ms, inch, outch, done) {
   while((val = (yield cc.select(t, inch)).value) !== undefined)
     if (!(yield cc.push(outch, val)))
       break;
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 var rest = function(taker) {
@@ -79,7 +79,7 @@ exports.takeUntil = function*(pred, inch, outch, done) {
   while((val = yield cc.pull(inch)) !== undefined)
     if (!(yield cc.push(outch, val)) || pred(val))
       break;
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 exports.dropWhile = function*(pred, inch, outch, done) {
@@ -90,7 +90,7 @@ exports.dropWhile = function*(pred, inch, outch, done) {
     if (go && !(yield cc.push(outch, val)))
       break;
   }
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 exports.merge = function*(inchs, outch, done) {
@@ -107,7 +107,7 @@ exports.merge = function*(inchs, outch, done) {
   });
 
   yield cc.pull(active);
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 exports.combine = function*(inchs, outch, done) {
@@ -130,7 +130,7 @@ exports.combine = function*(inchs, outch, done) {
     run(i);
 
   yield cc.pull(active);
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 exports.zip = function*(inchs, outch, done) {
@@ -163,7 +163,7 @@ exports.zip = function*(inchs, outch, done) {
       break;
   }
 
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 exports.scatter = function*(preds, inch, outchs, done) {
@@ -182,12 +182,12 @@ exports.scatter = function*(preds, inch, outchs, done) {
       }
     }
   }
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
 
 exports.each = function*(fn, inch, done) {
   var val;
   while ((val = yield cc.pull(inch)) !== undefined)
     fn(val);
-  yield cc.push(done, true);
+  cc.push(done, true);
 };
