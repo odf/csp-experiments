@@ -1,7 +1,6 @@
 'use strict';
 
-var go     = require('./core').go;
-var defer  = require('./defer').defer;
+var cc     = require('./core');
 var Buffer = require('./buffers').Buffer;
 
 
@@ -105,13 +104,13 @@ exports.chan = function(arg) {
 };
 
 exports.push = function(ch, val) {
-  var a = defer();
+  var a = cc.defer();
   ch.requestPush(val, a);
   return a;
 };
 
 exports.pull = function(ch) {
-  var a = defer();
+  var a = cc.defer();
   ch.requestPull(a);
   return a;
 };
@@ -137,7 +136,7 @@ exports.ticker = function(ms) {
   var step = function() {
     clearTimeout(t);
     t = setTimeout(step, ms);
-    go(function*() {
+    cc.go(function*() {
       if (!(yield exports.push(ch, null)))
         clearTimeout(t);
     });
@@ -165,7 +164,7 @@ var makeClient = function(i, channel, result, cleanup) {
 
 exports.select = function() {
   var args    = Array.prototype.slice.call(arguments);
-  var result  = defer();
+  var result  = cc.defer();
   var active  = [];
   var cleanup = function() {
     for (var i = 0; i < active.length; ++i)

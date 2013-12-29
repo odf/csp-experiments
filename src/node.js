@@ -1,12 +1,11 @@
 'use strict';
 
-var go    = require('./core').go;
-var defer = require('./defer').defer;
-var cc    = require('./channels');
+var core = require('./core');
+var cc   = require('./channels');
 
 
 var apply = exports.apply = function(fn, context, args) {
-  var result = defer();
+  var result = core.defer();
 
   fn.apply(context, args.concat(function(err, val) {
     if (err)
@@ -36,7 +35,7 @@ exports.fromStream = function(stream, outch, keepOpen)
   var ch = outch || cc.chan();
 
   stream.on('readable', function() {
-    go(function*() {
+    core.go(function*() {
       var chunk;
       while (null !== (chunk = stream.read()))
         yield cc.push(ch, chunk);
@@ -45,7 +44,7 @@ exports.fromStream = function(stream, outch, keepOpen)
 
   stream.on('end', function() {
     if (!keepOpen)
-      go(function*() { cc.close(ch); });
+      core.go(function*() { cc.close(ch); });
   });
 
   stream.on('error', function(err) {

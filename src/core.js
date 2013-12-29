@@ -3,7 +3,7 @@
 require('setimmediate');
 
 var RingBuffer = require('./RingBuffer');
-var defer = require('./defer').defer;
+var Deferred   = require('./Deferred');
 
 
 var scheduler = function(size) {
@@ -30,7 +30,12 @@ var scheduler = function(size) {
 var enqueue = scheduler();
 
 
-exports.go = function(generator) {
+var defer = function() {
+  return new Deferred();
+};
+
+
+var go = function(generator) {
   var args    = Array.prototype.slice.call(arguments, 1);
   var gen     = generator.apply(undefined, args);
   var result  = defer();
@@ -50,4 +55,10 @@ exports.go = function(generator) {
 
   succeed();
   return result;
+};
+
+
+module.exports = {
+  defer: defer,
+  go   : go
 };
